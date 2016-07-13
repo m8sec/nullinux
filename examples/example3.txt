@@ -1,0 +1,60 @@
+~/nullinux# ./nullinux.py --enumusers 10.0.0.5
+
+Starting nullinux v3.0 | 07-12-2016 08:12
+[+] Port scanning targets
+
+
+[*] Gathering Domain information
+    +Domain Name: WORKGROUP
+    +Domain SID: S-1-5-21-0123456789-0123456789-1234567
+
+[+] 10.0.0.5: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+
+    [*] Enumerating users for 10.0.0.5 through querydispinfo:
+        + localadmin
+
+    [*] Enumerating users for 10.0.0.5 through enumdomusers:
+        + localadmin
+        - user:[guest-disabled] rid:[0x1f5]
+
+
+    [*] Enumerating users for 10.0.0.5 through Local Security Authority
+        + Remote Desktop Users                (Network/Local Group)
+        + Users                               (Network/Local Group)
+        + Administrators                      (Network/Local Group)
+        - COMPUTERNAME\guest-disabled (1)
+        + user1
+        + user2
+        + user3
+        + user4
+        + user5
+        + user6
+        + LOCAL SERVICE                       (Network/Local Group)
+        + SYSTEM                              (Network/Local Group)
+
+    [*] Trying known usernames for 10.0.0.5
+        + Administrator
+        + Guest
+        + krbtgt
+
+    [*] Starting RID cycling for 10.0.0.5
+        + Administrator
+        + Guest
+        + krbtgt
+        + Domain Admins                       (Network/Local Group)
+        + Domain Users                        (Network/Local Group)
+        + Domain Controllers                  (Network/Local Group)
+
+    [*] Enumerating users by group memebership for 10.0.0.5
+        [+] Group: None
+            + localadmin
+            - COMPUTERNAME\guest-disabled
+
+[*] Found 10 USER(S) and 1 GROUP(S) for 10.0.0.5
+[*] Generating user list nullinux_users.txt
+[+] File complete
+[*] Closing
+
+
+**Groups found during RID Cycling and LSA enumeration are not added to the count**
+

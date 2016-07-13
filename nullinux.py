@@ -26,6 +26,7 @@ import socket
 import commands
 import datetime
 
+
 def banner():
     print"""
 
@@ -33,27 +34,28 @@ def banner():
     SMB Null Session Enumeration Tool
 
 HOST:
-  -U                   Set username    (optional)
-  -P                   Set Password    (optional)
+  -U                  	Set username    (optional)
+  -P                  	Set Password    (optional)
 
 CONNECTION:
-  -sT                  TCP Connection scan
-  -sS                  Stealth Scan (Default)
-  -sN                  Don't Check for open smb-related ports(Just connect)
+  -sT                 	TCP Connection scan
+  -sS                 	Stealth Scan 	(Default)
+  -sN                 	Don't Check for open smb-related ports(Just connect)
+  -p			Specify ports 	(Default: 139,445) 		      	
 
 SHARES:
-  --enumshares         Enumerate possible shares
-  -S share1,share2..   Specify share(s)
-  -A                   Try shares [IPC$, ADMIN$, C$]
+  --enumshares        	Enumerate possible shares
+  -S share1,share2..  	Specify share(s)
+  -A                  	Try shares [IPC$, ADMIN$, C$]
 
 USERS:
-  --enumusers          Enumerate users
-  --range #-#          Specify range for RID cycling (Default range: 0-35, 500-535)
+  --enumusers         	Enumerate users
+  --range #-#         	Specify range for RID cycling (Default range: 0-35,500-535)
 
 MORE OPTIONS:
-  --all		       Invoke all options [enumshares, enumusers]
-  -v	       	       verbose output
-  -h	       	       help
+  --all		      	Invoke all options [enumshares, enumusers]
+  -v	       	      	verbose output
+  -h	       	      	help
 
 EXAMPLES:
   ./nullinux.py -sT -v --enumusers 10.0.0.1-10
@@ -100,10 +102,10 @@ def portScan(rsp_flag):
     #Exit if no SMB ports found
     if not targets_enum:
         if verbose:
-            print "[-] No SMB ports detected"
+            print "\n[-] No SMB ports detected\n"
             sys.exit(0)
         else:
-            print "[-] No SMB ports detected, use -v for more information"
+            print "\n[-] No SMB ports detected, use -v for more information\n"
             sys.exit(0)
     else:
 	print "\n"
@@ -332,7 +334,7 @@ def enumerate_users(t, rid_cycling):
     			temp_name = temp_name[1].rstrip()
     			temp_name = temp_name.lstrip()
 			print "        + %-35s (Network/Local Group)" % (temp_name)
-    else: print 	"            -Could not enumerate LSA"
+    else: print "            -Could not enumerate LSA"
     #Enumerate users through known usernames
     print "\n    [*] Trying known usernames for %s" % (t)
     for user in known_usernames:

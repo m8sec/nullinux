@@ -1,0 +1,38 @@
+~/nullinux# ./nullinux.py -v 192.168.2.30-40
+
+Starting nullinux v3.0 | 07-12-2016 07:45
+[+] Port scanning targets
+    + 192.168.2.30 : 139 Open
+    + 192.168.2.30 : 445 Open
+    + 192.168.2.31 : 139 Open
+    + 192.168.2.31 : 445 Open
+    + 192.168.2.32 : 139 Open
+    + 192.168.2.32 : 445 Open
+    + 192.168.2.33 : 139 Open
+    + 192.168.2.33 : 445 Open
+    - 192.168.2.34 : 139 Closed
+    - 192.168.2.34 : 445 Closed
+    - 192.168.2.35 : 139 Closed
+    - 192.168.2.35 : 445 Closed
+    + 192.168.2.36 : 139 Open
+    + 192.168.2.36 : 445 Open
+    + 192.168.2.37 : 139 Open
+    + 192.168.2.37 : 445 Open
+    + 192.168.2.38 : 139 Open
+    + 192.168.2.38 : 445 Open
+    + 192.168.2.39 : 139 Open
+    + 192.168.2.39 : 445 Open
+    + 192.168.2.40 : 139 Open
+    + 192.168.2.40 : 445 Open
+
+
+[+] 192.168.2.30: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.31: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.32: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.33: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.36: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.37: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.38: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.39: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+[+] 192.168.2.40: Domain=[WORKGROUP] OS=[Windows 7 Enterprise 7601 Service Pack 1] Server=[Windows 7 Enterprise 6.1]
+
