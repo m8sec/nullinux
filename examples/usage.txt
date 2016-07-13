@@ -1,0 +1,31 @@
+              nullinux | v3.0
+    SMB Null Session Enumeration Tool
+
+HOST:
+  -U                  	Set username    (optional)
+  -P                  	Set Password    (optional)
+
+CONNECTION:
+  -sT                 	TCP Connection scan
+  -sS                 	Stealth Scan 	(Default)
+  -sN                 	Don't Check for open smb-related ports(Just connect)
+  -p			Specify ports 	(Default: 139,445) 		      	
+
+SHARES:
+  --enumshares        	Enumerate possible shares
+  -S share1,share2..  	Specify share(s)
+  -A                  	Try shares [IPC$, ADMIN$, C$]
+
+USERS:
+  --enumusers         	Enumerate users
+  --range #-#         	Specify range for RID cycling (Default range: 0-35,500-535)
+
+MORE OPTIONS:
+  --all		      	Invoke all options [enumshares, enumusers]
+  -v	       	      	verbose output
+  -h	       	      	help
+
+EXAMPLES:
+  ./nullinux.py -sT -v --enumusers 10.0.0.1-10
+  ./nullinux.py -sN -U Administrator -P password --all 10.0.0.10
+  ./nullinux.py 10.0.0.1-255
