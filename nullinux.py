@@ -17,9 +17,6 @@
 # consent. The author is in no way responsible 
 # for your use of this tool or its effects.
 
-#to do
-# split modules
-
 
 import sys
 import logging
