@@ -560,7 +560,7 @@ try:
 	if type(port_nums) != int:
 	    print "[-] Error: Invalid ports provided.\n"
         for x in sys.argv[port_nums].split(","):
-            ports.append(x)
+            ports.append(int(x))
     else:
         ports = [139, 445]
 
