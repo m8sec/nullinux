@@ -67,11 +67,6 @@ def startUp():
     currentTime = datetime.datetime.now().strftime('%m-%d-%Y %H:%M')
     print"\nStarting nullinux %s | %s" % (version, currentTime)
 
-
-def closing():
-    print "\n[-] Process Stopped: Closing nullinux...\n"
-    sys.exit(0)
-
 #Port scan: Stealth Scan (Default)/TCP Scan based on response flag sent.
 def portScan(rsp_flag):
     targets_enum = []
@@ -173,8 +168,7 @@ def enum_main(targets_enum):
 	    print "[+] File complete\n[*] Closing\n"
 	    sys.exit(0)
     else:
-	print "\n[*] nullinux closing\n"
-	sys.exit(0)
+	print "\n", sys.exit(0)
 
 def enumerate_domain(target):
     domain_info = []
@@ -465,8 +459,8 @@ username    	    =	"\"\""
 password    	    =	"\"\""
 rid_range	    =   [] 
 targets_portScan    =   []
-shares      	    =	[]
-ports		    =   [] 	
+shares      	    =	['IPC$']
+ports		    =   [139, 445]	
 
 try:
     #Display banner
@@ -536,13 +530,12 @@ try:
 
     #Set Shares
     if "-S" in sys.argv:
+	shares = []
         ID = sys.argv.index("-S")+1
         for x in sys.argv[ID].split(","):
             shares.append(x)
     elif "-A" in sys.argv:
         shares = ['IPC$', 'ADMIN$', 'C$']
-    else:
-        shares = ['IPC$']
 
     #Set Username if provided
     if "-U" in sys.argv:
@@ -556,14 +549,13 @@ try:
 
     #Set Ports
     if "-p" in sys.argv:
+	ports = []
         port_nums = sys.argv.index("-p")+1
 	if type(port_nums) != int:
 	    print "[-] Error: Invalid ports provided.\n"
         for x in sys.argv[port_nums].split(","):
             ports.append(int(x))
-    else:
-        ports = [139, 445]
-
+        
     #Set Scan Type
     if "-sT" in sys.argv:
 	scanType = "-sT"
@@ -595,5 +587,6 @@ try:
         print "[-] Error: Invalid scan used.\n"
         sys.exit(0)
 
-except KeyboardInterrupt:
-    closing()
+except KeyboardInterrupt: print "\n[-] Process Stopped: Closing nullinux...\n"
+
+sys.exit(0)
