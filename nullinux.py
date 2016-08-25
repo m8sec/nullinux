@@ -273,14 +273,17 @@ def enum_querydispinfo(t):
         elif "could not" in line: 	pass #print 	"        -", line
         elif "disabled" in line: 	pass #print 	"        -", line
         else:	
-	    #Split output to get user			
-	    name_split = line.split(": ")
-            temp_name = name_split[4]
-            temp_name = temp_name.split("Name")
-            temp_name = temp_name[0].lstrip()
-            temp_name = temp_name.rstrip()
-            print "        +",temp_name
-	    temp_users_collected.append(temp_name)
+	    try:
+	        #Split output to get user			
+	        name_split = line.split(": ")
+                temp_name = name_split[4]
+                temp_name = temp_name.split("Name")
+                temp_name = temp_name[0].lstrip()
+                temp_name = temp_name.rstrip()
+                print "        +",temp_name
+	        temp_users_collected.append(temp_name)
+	    except:
+		print "        *",line
     return temp_users_collected
 
 def enum_enumdomusers(t):
@@ -295,14 +298,17 @@ def enum_enumdomusers(t):
         elif "could not" in line: 	pass #print 	"        -", line
         elif "disabled" in line: 	print 	"        -", line
         else:
-	    #Split output to get user				
-	    name_split = line.split("[")
-	    temp_name = name_split[1]
-            temp_name = temp_name.split("]")
-            temp_name = temp_name[0].lstrip()
-            temp_name = temp_name.rstrip()
-            print "        +",temp_name
-       	    temp_users_collected.append(temp_name)
+	    try:
+	        #Split output to get user				
+	        name_split = line.split("[")
+	        temp_name = name_split[1]
+                temp_name = temp_name.split("]")
+                temp_name = temp_name[0].lstrip()
+                temp_name = temp_name.rstrip()
+                print "        +",temp_name
+       	        temp_users_collected.append(temp_name)
+	    except:
+		print "        *",line
     return temp_users_collected
 
 def enum_lsa(t):
@@ -333,23 +339,27 @@ def enum_lsa(t):
 		    if verbose:	print 	"            -", line
 		    else:	print 	"        -", line
         	else:
-	    	    #Split output to get user
-		    temp_line = line.split(" (")
-		    temp_num = temp_line[1].split(")")
-		    if "1" in temp_num[0]: #temp_num[0] number of members
-    			temp_name = temp_line[0].split("\\")
-    			temp_name = temp_name[1].rstrip()
-    			temp_name = temp_name.lstrip()
-			if verbose: 	print "            +",temp_name
-			else:		print "        +",temp_name
-       	        	temp_users_collected.append(temp_name)
-		    else:
-			temp_name = temp_line[0].split("\\")
-    			temp_name = temp_name[1].rstrip()
-    			temp_name = temp_name.lstrip()
-			if verbose: 	print "            + %-35s (Network/Local Group)" % (temp_name)
-			else:		print "        + %-35s (Network/Local Group)" % (temp_name)
-    else: print "            -Could not enumerate LSA"
+		    try:
+	    	        #Split output to get user
+		        temp_line = line.split(" (")
+		        temp_num = temp_line[1].split(")")
+		        if "1" in temp_num[0]: #temp_num[0] number of members
+    			    temp_name = temp_line[0].split("\\")
+    			    temp_name = temp_name[1].rstrip()
+    			    temp_name = temp_name.lstrip()
+			    if verbose: 	print "            +",temp_name
+			    else:		print "        +",temp_name
+       	        	    temp_users_collected.append(temp_name)
+		        else:
+			    temp_name = temp_line[0].split("\\")
+    			    temp_name = temp_name[1].rstrip()
+    			    temp_name = temp_name.lstrip()
+			    if verbose: 	print "            + %-35s (Network/Local Group)" % (temp_name)
+			    else:		print "        + %-35s (Network/Local Group)" % (temp_name)
+		    except:
+			 print "        *",line
+    else: 
+	print "            - Failed to Enumerate LSA"
     return temp_users_collected
 
 def enum_RIDcycle(t, domain_sid):
@@ -368,20 +378,23 @@ def enum_RIDcycle(t, domain_sid):
 	    elif "could not" in line: 	pass #print 	"        -", line
             elif "disabled" in line: 	print 	"        -", line
             else:
-	        #Split output to get user
-		temp_line = line.split(" (")
-		temp_num = temp_line[1].split(")")
-		if "1" in temp_num[0]: #temp_num[0] number of members
-    		    temp_name = temp_line[0].split("\\")
-    		    temp_name = temp_name[1].rstrip()
-    		    temp_name = temp_name.lstrip()
-		    print "        +",temp_name
-       	       	    temp_users_collected.append(temp_name)
-		else:
-		    temp_name = temp_line[0].split("\\")
-    		    temp_name = temp_name[1].rstrip()
-    		    temp_name = temp_name.lstrip()
-		    print "        + %-35s (Network/Local Group)" % (temp_name)
+		try:
+	            #Split output to get user
+		    temp_line = line.split(" (")
+		    temp_num = temp_line[1].split(")")
+		    if "1" in temp_num[0]: #temp_num[0] number of members
+    		        temp_name = temp_line[0].split("\\")
+    		        temp_name = temp_name[1].rstrip()
+    		        temp_name = temp_name.lstrip()
+		        print "        +",temp_name
+       	       	        temp_users_collected.append(temp_name)
+		    else:
+		        temp_name = temp_line[0].split("\\")
+    		        temp_name = temp_name[1].rstrip()
+    		        temp_name = temp_name.lstrip()
+		        print "        + %-35s (Network/Local Group)" % (temp_name)
+		except:
+		    print "        *",line
     return temp_users_collected
 
 def enum_known_users(t):
@@ -402,12 +415,15 @@ def enum_known_users(t):
 	    elif "lsa pipe" in line:		pass
             elif "disabled" in line: 		print 	"        -", line
             else:
-	    	#Split output to get user
-	        temp_line = line.split(" S")
-    	    	temp_name = temp_line[0].rstrip()
-		temp_name = temp_name.lstrip()
-		print "        +",temp_name
-       	        temp_users_collected.append(temp_name)
+		try:
+	    	    #Split output to get user
+	            temp_line = line.split(" S")
+    	    	    temp_name = temp_line[0].rstrip()
+		    temp_name = temp_name.lstrip()
+		    print "        +",temp_name
+       	            temp_users_collected.append(temp_name)
+		except:
+		    print "        *",line
     return temp_users_collected
 
 def enum_group_mem(t):
@@ -423,30 +439,36 @@ def enum_group_mem(t):
         elif "could not" in line: 	pass #print 	"        -", line
         elif "disabled" in line: 	print 	"        -", line
 	else:
-	    #Split output got get group
-	    a = line.split("]")
-	    b = a[0].split("[")
-  	    domain_group = b[1].lstrip()
-	    domain_group = domain_group.rstrip()
-	    print "        [+] Group:",domain_group
-	    if domain_group not in groups_collected:
- 	 	groups_collected.append(domain_group)
-	    #Enumerate memebers of the group
-	    enum_members = "net rpc group members \'%s\' -U %s%%%s -I %s" % (domain_group, username, password, t)
-            enum_members_output = commands.getstatusoutput(enum_members)
-            for line in enum_members_output[1].splitlines():
-	        if "DENIED" in line: 		print 	"            -", line
-	        elif "disabled" in line: 	print 	"            -", line
-	        elif "error" in line: 		print 	"            -", line
-	        elif "failed" in line: 		print 	"            -", line
-	        elif "could not" in line: 	print 	"            -", line
-	        else:
-		    #Split output to get user
-    		    d = line.split("\\")
-		    domain_user = d[1].lstrip()
-		    domain_user = domain_user.rstrip()
-		    print "            +",domain_user
-		    temp_users_collected.append(domain_user)
+	    try:
+	        #Split output got get group
+	        a = line.split("]")
+	        b = a[0].split("[")
+  	        domain_group = b[1].lstrip()
+	        domain_group = domain_group.rstrip()
+	        print "        [+] Group:",domain_group
+	        if domain_group not in groups_collected:
+ 	 	    groups_collected.append(domain_group)
+	        #Enumerate memebers of the group
+	        enum_members = "net rpc group members \'%s\' -U %s%%%s -I %s" % (domain_group, username, password, t)
+                enum_members_output = commands.getstatusoutput(enum_members)
+                for line in enum_members_output[1].splitlines():
+	            if "DENIED" in line: 		print 	"            -", line
+	            elif "disabled" in line: 	print 	"            -", line
+	            elif "error" in line: 		print 	"            -", line
+	            elif "failed" in line: 		print 	"            -", line
+	            elif "could not" in line: 	print 	"            -", line
+	            else:
+		        try:
+		            #Split output to get user
+    		            d = line.split("\\")
+		            domain_user = d[1].lstrip()
+		            domain_user = domain_user.rstrip()
+		            print "            +",domain_user
+		            temp_users_collected.append(domain_user)
+		        except:
+		            print "            *",line
+	    except:
+		print "        [*] Error with Group:",line
     return temp_users_collected, groups_collected
 
 #Default Values
@@ -454,7 +476,6 @@ version		    =   "v3.2"
 verbose	    	    =	False
 enumshares  	    =	False
 enumusers   	    =	False
-scanType    	    =	"-sS"
 username    	    =	"\"\""
 password    	    =	"\"\""
 rid_range	    =   [] 
@@ -493,7 +514,7 @@ try:
     elif "--range" in sys.argv and "--all" in sys.argv:
 	temp_rid_range = sys.argv.index("--range")+1
 	if "-" not in sys.argv[temp_rid_range]:
-	    print "[-] Error: Incorrect range for brute_force"
+	    print "[-] Error: Incorrect range for RID cycling"
 	    sys.exit(0)
 	rid_one, rid_two = sys.argv[temp_rid_range].split("-")
 	for x in range(int(rid_one), int(rid_two)+1): rid_range.append(x)
@@ -555,38 +576,21 @@ try:
 	    print "[-] Error: Invalid ports provided.\n"
         for x in sys.argv[port_nums].split(","):
             ports.append(int(x))
-        
-    #Set Scan Type
-    if "-sT" in sys.argv:
-	scanType = "-sT"
-    elif "-sN" in sys.argv:
-        scanType = "-sN"
-        #Input validation
-    elif "-sS" and "-sT" in sys.argv:
-        print "[-] Error: too many scan types listed.\n"
-        sys.exit(0)
-    elif "-sS" and "-sN" in sys.argv:
-        print "[-] Error: too many scan types listed.\n"
-        sys.exit(0)
-    elif "-sT" and "-sN" in sys.argv:
-        print "[-] Error: too many scan types listed.\n"
-        sys.exit(0)
 
-    #Check for open SMB ports
-    if scanType == "-sS":
+    #If multiple scans in sys.argv the first will be used
+    if "-sS" in sys.argv:
 	rsp_flag = "R"
-        portScan(rsp_flag)
-    elif scanType == "-sT":
+	portScan(rsp_flag)
+    elif "-sT" in sys.argv:
 	rsp_flag = "AR"
 	portScan(rsp_flag)
-    elif scanType == "-sN":
-	print "[*] SMB port scanner disabled"
+    elif "-sN" in sys.argv:
+        print "[*] SMB port scanner disabled"
         targets_enum = targets_portScan
         enum_main(targets_enum)
     else:
-        print "[-] Error: Invalid scan used.\n"
-        sys.exit(0)
+	rsp_flag = "R"
+	portScan(rsp_flag)
 
-except KeyboardInterrupt: print "\n[-] Process Stopped: Closing nullinux...\n"
-
-sys.exit(0)
+except KeyboardInterrupt: 
+    print "\n[-] Process Stopped: Closing nullinux...\n"
