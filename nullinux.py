@@ -114,9 +114,9 @@ def enum_main(targets_enum):
 	    print "    *Retrying domain enumeration"
 	    domain_info = enumerate_domain(targets_enum[1])
 	    if not domain_info:
-		print"    -Domain enumeration failed, RID cycling disabled\n"
+		print"    - Domain Enumeration Failed, RID Cycling Disabled\n"
 	if not domain_info and targets_enum[0] == targets_enum[-1]:
-	    print"    -Domain enumeration failed, RID cycling disabled\n"
+	    print"    - Domain Enumeration Failed, RID Cycling Disabled\n"
 
     #Gather os information
     for t in targets_enum:
@@ -132,7 +132,8 @@ def enum_main(targets_enum):
 	    temp_users_collected += enum_querydispinfo(t)
 	    temp_users_collected += enum_enumdomusers(t)
 	    temp_users_collected += enum_lsa(t)
-	    if domain_info: temp_users_collected += enum_RIDcycle(t,domain_info[1])
+	    if domain_info: 
+		temp_users_collected += enum_RIDcycle(t,domain_info[0])
 	    temp_users_collected += enum_known_users(t)
 	    enum_users, enum_groups = enum_group_mem(t)
 	    temp_users_collected += enum_users
@@ -148,7 +149,8 @@ def enum_main(targets_enum):
 	    temp_users_collected += enum_querydispinfo(t)
 	    temp_users_collected += enum_enumdomusers(t)
 	    temp_users_collected += enum_lsa(t)
-	    if domain_info: temp_users_collected += enum_RIDcycle(t,domain_info[1])
+	    if domain_info: 
+		temp_users_collected += enum_RIDcycle(t,domain_info[0])
 	    temp_users_collected += enum_known_users(t)
 	    enum_users, enum_groups = enum_group_mem(t)
 	    temp_users_collected += enum_users
@@ -158,7 +160,7 @@ def enum_main(targets_enum):
 		    users_collected.append(user)
     #Closing
     if enumusers:
-        print "\n[*] Found %s USER(S) and %s GROUP(S) for %s" % (len(users_collected), len(groups_collected), sys.argv[-1]) 	
+        print "[*] Found %s USER(S) and %s GROUP(S) for %s" % (len(users_collected), len(groups_collected), sys.argv[-1]) 	
         if not users_collected: 
 	    print "[-] No Users Found\n[-] Closing\n"
 	    sys.exit(0)
@@ -182,21 +184,25 @@ def enumerate_domain(target):
     lsaquery = "rpcclient -c lsaquery -U %s%%%s %s" % (username, password, target)
     lsaquery_output = commands.getstatusoutput(lsaquery)
     for line in lsaquery_output[1].splitlines():
-	if "Domain Name:" in line:
-    	    label1, domain_name = line.split(":")
-    	    domain_name = domain_name.lstrip()
-    	    domain_name = domain_name.rstrip()
-	    domain_info.append(domain_name)
-    	    print "    +Domain Name: %s" % (domain_name)
-	elif "Domain Sid:" in line:
-    	    label2, domain_sid = line.split(":")
-    	    domain_sid = domain_sid.lstrip()
-    	    domain_sid = domain_sid.rstrip()
-	    domain_info.append(domain_sid)
-    	    print "    +Domain SID: %s\n" % (domain_sid)
+	try:
+	    if "Domain Name:" in line:
+    	        #label1, domain_name = line.split(":")
+    	        #domain_name = domain_name.lstrip()
+    	        #domain_name = domain_name.rstrip()
+	        #domain_info.append(domain_name)
+    	        #print "    +Domain Name: %s" % (domain_name)
+		print "    +",line
+	    elif "Domain Sid:" in line:
+    	        label2, domain_sid = line.split(":")
+    	        domain_sid = domain_sid.lstrip()
+    	        domain_sid = domain_sid.rstrip()
+	        domain_info.append(domain_sid)
+    	        print "    + Domain SID: %s\n" % (domain_sid)
+	except:
+	    print "    *",line
     if not domain_info:
 	return False
-    else:
+    else:	
 	return domain_info
 
 
@@ -364,7 +370,23 @@ def enum_lsa(t):
 
 def enum_RIDcycle(t, domain_sid):
     temp_users_collected = []
+    #Start RID Cycling
     print "\n    [*] Starting RID cycling for %s" % (t)
+    #Set custom range for brute_force
+    if "--range" in sys.argv:
+	temp_rid_range = sys.argv.index("--range")+1
+	if "-" not in sys.argv[temp_rid_range]:
+	    print "[-] Error: Incorrect range for brute_force"
+	    sys.exit(0)
+	try:
+	    rid_one, rid_two = sys.argv[temp_rid_range].split("-")
+	    rid_range = list(range(int(rid_one),int(rid_two)+1))
+	except:
+	    print "        [*] Error: Default Values Being Used"
+	    rid_range = list(range(0,36))+list(range(500,536))
+    else:
+	rid_range = list(range(0,36))+list(range(500,536))
+    #Start Enumeration
     for rid in rid_range:
         user_rid = "rpcclient -c \"lookupsids %s-%s\" -U %s%%%s %s" % (domain_sid, rid, username, password, t)
 	user_rid_output = commands.getstatusoutput(user_rid)
@@ -469,16 +491,16 @@ def enum_group_mem(t):
 		            print "            *",line
 	    except:
 		print "        [*] Error with Group:",line
+    print "\n"
     return temp_users_collected, groups_collected
 
 #Default Values
-version		    =   "v3.2"
+version		    =   "v3.5"
 verbose	    	    =	False
 enumshares  	    =	False
 enumusers   	    =	False
 username    	    =	"\"\""
 password    	    =	"\"\""
-rid_range	    =   [] 
 targets_portScan    =   []
 shares      	    =	['IPC$']
 ports		    =   [139, 445]	
@@ -503,28 +525,6 @@ try:
 	enumshares 	= True
 	enumusers	= True
 
-        #Set custom range for brute_force
-    if "--range" in sys.argv and "--enumusers" in sys.argv:
-	temp_rid_range = sys.argv.index("--range")+1
-	if "-" not in sys.argv[temp_rid_range]:
-	    print "[-] Error: Incorrect range for brute_force"
-	    sys.exit(0)
-	rid_one, rid_two = sys.argv[temp_rid_range].split("-")
-	for x in range(int(rid_one), int(rid_two)+1): rid_range.append(x)
-    elif "--range" in sys.argv and "--all" in sys.argv:
-	temp_rid_range = sys.argv.index("--range")+1
-	if "-" not in sys.argv[temp_rid_range]:
-	    print "[-] Error: Incorrect range for RID cycling"
-	    sys.exit(0)
-	rid_one, rid_two = sys.argv[temp_rid_range].split("-")
-	for x in range(int(rid_one), int(rid_two)+1): rid_range.append(x)
-    elif "--enumusers" in sys.argv:
-	for x in range(0, 35): rid_range.append(x)
-	for x in range(500, 535): rid_range.append(x)	
-    elif "--all" in sys.argv:
-	for x in range(0, 35): rid_range.append(x)
-	for x in range(500, 535): rid_range.append(x)
-
     #Set Targets
     target = sys.argv[-1]
     if "." not in target or len(target) < 7:
@@ -537,7 +537,7 @@ try:
     elif "-" in target:
         A, B = target.split("-")
         A1, A2, A3, A4 = A.split(".")
-        for x in range(int(A4), int(B) + 1):
+        for x in range(int(A4), int(B)+1):
             target = A1 + "." + A2 + "." + A3 + "."
             target += `x`
             targets_portScan.append(target)
