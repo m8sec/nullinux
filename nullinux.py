@@ -1,7 +1,6 @@
 #!/usr/bin/python2.7
-# nullinux.py
-# SMB null session enumeration tool for Linux
 # MIT license 2016
+# Copyright @ 2016
 # Author: m8r0wn
 
 # Usage
@@ -14,8 +13,7 @@
 # Disclaimer
 #------------------------------------------------
 # This tool was designed to be used only with proper
-# consent. The author is in no way responsible 
-# for your use of this tool or its effects.
+# consent. Use at your own risk.
 
 import sys
 import logging
