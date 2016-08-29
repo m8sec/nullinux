@@ -200,7 +200,7 @@ def enumerate_domain(target):
     	        print "    + Domain SID: %s\n" % (domain_sid)
 	except:
 	    print "    *",line
-    if not domain_info:
+    if not domain_info or "NULL" in domain_sid:
 	return False
     else:	
 	return domain_info
