@@ -533,16 +533,24 @@ try:
         sys.exit(0)
         #Range of IP's 127.0.0.1-255
     elif "-" in target:
-        A, B = target.split("-")
-        A1, A2, A3, A4 = A.split(".")
-        for x in range(int(A4), int(B)+1):
-            target = A1 + "." + A2 + "." + A3 + "."
-            target += `x`
-            targets_portScan.append(target)
+	try:
+            A, B = target.split("-")
+            A1, A2, A3, A4 = A.split(".")
+            for x in range(int(A4), int(B)+1):
+                target = A1 + "." + A2 + "." + A3 + "."
+                target += `x`
+                targets_portScan.append(target)
+	except:
+	    print "[-] Error: Invalid target detected.\n"
+            sys.exit(0)
         #Multiple IP's 127.0.0.1,127.0.0.2,127.0.0.3
     elif "," in sys.argv[-1]:
-        for t in sys.argv[-1].split(","):
-            targets_portScan.append(t)
+	try:
+            for t in sys.argv[-1].split(","):
+                targets_portScan.append(t)
+	except:
+	    print "[-] Error: Invalid target detected.\n"
+            sys.exit(0)
         #Single IP 127.0.0.1
     else:
         targets_portScan.append(target)
