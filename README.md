@@ -1,6 +1,6 @@
 # nullinux
 ####About
-nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, shares, directories, and users through SMB null sessions. Unlike many of the enumeration tools out there already, nullinux can be executed on multiple machines at once and creates a users.txt file of all users found on the host(s). This file is formatted for direct implementaiton and further exploitation.
+nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, shares, directories, and users through SMB null sessions. Unlike many of the enumeration tools out there already, nullinux can be executed on multiple machines at once and creates a users.txt file of all users found on the host(s). This file is formatted for direct implementation and further exploitation.
 
 This program assumes Python 2.7 and the Samba package are installed on the machine.
 
