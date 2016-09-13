@@ -8,16 +8,14 @@ This program assumes Python 2.7 and the Samba package are installed on the machi
 ./nullinux.py -sT -v --enumusers 10.0.0.1-10<br>
 ./nullinux.py -sN -U Administrator -P password --all 10.0.0.10<br>
 ./nullinux.py 10.0.0.1-255<br><br>
+
+Example usage video below:<br>
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/5WAqgRpgpTk/0.jpg)](https://www.youtube.com/watch?v=5WAqgRpgpTk)
+<br><br>
 See the examples section for commands, output, and more.
 
 
 ####Download
 nullinux.py:<br>
 git clone https://github.com/m8r0wn/nullinux<br><br>
-
-Example usage video below:<br>
-                 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/5WAqgRpgpTk/0.jpg)](https://www.youtube.com/watch?v=5WAqgRpgpTk)
-<br>
-<br>
 
