@@ -9,9 +9,9 @@ This program assumes Python 2.7 and the Samba package are installed on the machi
 ./nullinux.py -sN -U Administrator -P password --all 10.0.0.10<br>
 ./nullinux.py 10.0.0.1-255<br><br>
 
-Example usage video below:<p align="center">
+Example usage video:<p align="center">
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/5WAqgRpgpTk/0.jpg)](https://www.youtube.com/watch?v=5WAqgRpgpTk)
-</p><br><br>
+</p><br>
 See the examples section for commands, output, and more.
 
 
