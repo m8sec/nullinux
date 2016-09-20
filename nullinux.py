@@ -123,6 +123,8 @@ def enum_main(targets_enum):
         for line in smb_info_output[1].splitlines():
             if "WARNING" in line:		pass
 	    elif "BAD_NETWORK_NAME" in line: 	pass
+	    elif "Error" in line: 		pass
+	    elif "failed" in line: 	pass
             else:				print "[+] %s: %s" % (t, line)
 	#Begin share/user enumeration
 	if enumshares and enumusers:
@@ -591,7 +593,7 @@ try:
 	rsp_flag = "AR"
 	portScan(rsp_flag)
     elif "-sN" in sys.argv:
-        print "[*] SMB port scanner disabled"
+        print "[*] SMB port scanner disabled\n"
         targets_enum = targets_portScan
         enum_main(targets_enum)
     else:
