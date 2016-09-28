@@ -124,7 +124,7 @@ def enum_main(targets_enum):
             if "WARNING" in line:		pass
 	    elif "BAD_NETWORK_NAME" in line: 	pass
 	    elif "Error" in line: 		pass
-	    elif "failed" in line: 	pass
+	    elif "failed" in line: 		pass
             else:				print "[+] %s: %s" % (t, line)
 	#Begin share/user enumeration
 	if enumshares and enumusers:
@@ -391,11 +391,11 @@ def enum_RIDcycle(t, domain_sid):
         user_rid = "rpcclient -c \"lookupsids %s-%s\" -U %s%%%s %s" % (domain_sid, rid, username, password, t)
 	user_rid_output = commands.getstatusoutput(user_rid)
 	for line in user_rid_output[1].splitlines():
-            if "DENIED" in line: 		pass #print 	"        -", line
-            elif "INVALID_SID" in line: 	pass #print 	"        -", line
-            elif "error" in line: 		pass #print 	"        -", line
-            elif "failed" in line: 		pass #print 	"        -", line
-            elif "NONE_MAPPED" in line: 	pass #print 	"        -", line
+            if "DENIED" in line: 	pass #print 	"        -", line
+            elif "INVALID_SID" in line: pass #print 	"        -", line
+            elif "error" in line: 	pass #print 	"        -", line
+            elif "failed" in line: 	pass #print 	"        -", line
+            elif "NONE_MAPPED" in line: pass #print 	"        -", line
 	    elif "*unknown*" in line: 	pass #print 	"        -", line
 	    elif "could not" in line: 	pass #print 	"        -", line
             elif "disabled" in line: 	print 	"        -", line
@@ -427,15 +427,15 @@ def enum_known_users(t):
 	known_user = "rpcclient -c \"lookupnames %s\" -U %s%%%s %s" % (user, username, password, t)
 	known_user_output = commands.getstatusoutput(known_user)
 	for line in known_user_output[1].splitlines():
-            if "DENIED" in line: 		pass #print 	"        -" + line + " (%s)" % user
-            elif "INVALID_SID" in line: 	pass #print 	"        -" + line + " (%s)" % user
-            elif "error" in line: 		pass #print 	"        -" + line + " (%s)" % user
-            elif "failed" in line: 		pass #print 	"        -" + line + " (%s)" % user
-            elif "NONE_MAPPED" in line: 	pass #print 	"        -" + line + " (%s)" % user
-	    elif "*unknown*" in line: 		pass #print 	"        -" + line + " (%s)" % user
-	    elif "could not" in line: 		pass
-	    elif "lsa pipe" in line:		pass
-            elif "disabled" in line: 		print 	"        -", line
+            if "DENIED" in line: 	pass #print 	"        -" + line + " (%s)" % user
+            elif "INVALID_SID" in line: pass #print 	"        -" + line + " (%s)" % user
+            elif "error" in line: 	pass #print 	"        -" + line + " (%s)" % user
+            elif "failed" in line: 	pass #print 	"        -" + line + " (%s)" % user
+            elif "NONE_MAPPED" in line: pass #print 	"        -" + line + " (%s)" % user
+	    elif "*unknown*" in line: 	pass #print 	"        -" + line + " (%s)" % user
+	    elif "could not" in line: 	pass
+	    elif "lsa pipe" in line:	pass
+            elif "disabled" in line: 	print 	"        -", line
             else:
 		try:
 	    	    #Split output to get user
@@ -474,10 +474,10 @@ def enum_group_mem(t):
 	        enum_members = "net rpc group members \'%s\' -U %s%%%s -I %s" % (domain_group, username, password, t)
                 enum_members_output = commands.getstatusoutput(enum_members)
                 for line in enum_members_output[1].splitlines():
-	            if "DENIED" in line: 		print 	"            -", line
+	            if "DENIED" in line: 	print 	"            -", line
 	            elif "disabled" in line: 	print 	"            -", line
-	            elif "error" in line: 		print 	"            -", line
-	            elif "failed" in line: 		print 	"            -", line
+	            elif "error" in line: 	print 	"            -", line
+	            elif "failed" in line: 	print 	"            -", line
 	            elif "could not" in line: 	print 	"            -", line
 	            else:
 		        try:
