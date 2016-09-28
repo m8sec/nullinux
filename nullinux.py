@@ -225,13 +225,16 @@ def enumerate_shares(t):
         elif "Domain" in line: 			print 	"         ", line
         elif "DOMAIN" in line: 			print 	"         ", line
         elif "Workgroup" in line: 		print 	"         ", line
-	else: 	
-	    #Take shares found and add to t_shares list
-	    share_string = line.split(' ')
-	    s = share_string[0].lstrip()
-	    s = s.rstrip()
-	    if s not in shares: t_shares.append(s)				
-	    print "        +", line
+	else:
+	    try: 	
+	        #Take shares found and add to t_shares list
+	        share_string = line.split(' ')
+	        s = share_string[0].lstrip()
+	        s = s.rstrip()
+	        if s not in shares: t_shares.append(s)				
+	        print "        +", line
+	    except:
+		print "        *", line
     #Enum directory from shares dynamically gathered
     for s in shares:
         enum_dir = "smbclient //%s/%s -U %s%%%s -c dir" % (t, s, username, password)
