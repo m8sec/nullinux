@@ -322,21 +322,21 @@ def enum_enumdomusers(t):
 
 def enum_lsa(t):
     temp_users_collected = []
-    rids_collected = []
+    sids_collected = []
     print "\n    [*] Enumerating users for %s through Local Security Authority" % (t)
-    lsa_rids = "rpcclient -c lsaenumsid -U %s%%%s %s" % (username, password, t)
-    lsa_rids_output = commands.getstatusoutput(lsa_rids)
-    if verbose: print "        [*] RIDS:"
-    for line in lsa_rids_output[1].splitlines():
+    lsa_sids = "rpcclient -c lsaenumsid -U %s%%%s %s" % (username, password, t)
+    lsa_sids_output = commands.getstatusoutput(lsa_sids)
+    if verbose: print "        [*] SIDS:"
+    for line in lsa_sids_output[1].splitlines():
 	if "S-1-5-" in line:
-	    rids_collected.append(line)
+	    sids_collected.append(line)
 	    if verbose: print "            +",line
-    if rids_collected:
+    if sids_collected:
 	if verbose: print "        [*] Users:"
-	for rid in rids_collected:
-	    user_rid = "rpcclient -c 'lookupsids %s' -U %s%%%s %s" % (rid, username, password, t)
-	    user_rid_output = commands.getstatusoutput(user_rid)
-	    for line in user_rid_output[1].splitlines():
+	for sid in sids_collected:
+	    user_sid = "rpcclient -c 'lookupsids %s' -U %s%%%s %s" % (sid, username, password, t)
+	    user_sid_output = commands.getstatusoutput(user_sid)
+	    for line in user_sid_output[1].splitlines():
         	if "DENIED" in line: 		pass #print 	"        -", line
         	elif "INVALID_SID" in line: 	pass #print 	"        -", line
         	elif "error" in line: 		pass #print 	"        -", line
