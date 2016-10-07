@@ -328,7 +328,7 @@ def enum_lsa(t):
     lsa_sids_output = commands.getstatusoutput(lsa_sids)
     if verbose: print "        [*] SIDS:"
     for line in lsa_sids_output[1].splitlines():
-	if "S-1-5-" in line:
+	if "S-1-5-21" in line:
 	    sids_collected.append(line)
 	    if verbose: print "            +",line
     if sids_collected:
