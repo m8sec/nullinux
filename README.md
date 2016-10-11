@@ -1,8 +1,8 @@
 # nullinux
 ####About
-nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, doamin information, shares, directories, and users through SMB null sessions. Unlike many of the enumeration tools out there already, nullinux can enumerate multiple targets at once and when finished creates a users.txt file of all users found on the host(s). This file is formatted for direct implementation and further exploitation.
+nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, domain information, shares, directories, and users through SMB null sessions. Unlike many of the enumeration tools out there already, nullinux can enumerate multiple targets at once and when finished creates a users.txt file of all users found on the host(s). This file is formatted for direct implementation and further exploitation.
 
-This program assumes Python 2.7 and the Samba package are installed on the machine.
+This program assumes Python 2.7, the Scapy module, and the Samba package are installed on the machine.
 
 ###Usage
 ./nullinux.py -sT -v --enumusers 10.0.0.1-10<br>
