@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 # MIT license 2016
-# Copyright @ 2016
+# Copyright (c) 2016
 # Author: m8r0wn
 
 # Usage
