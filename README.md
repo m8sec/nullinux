@@ -19,3 +19,5 @@ See the examples section for commands, output, and more.
 nullinux.py:<br>
 git clone https://github.com/m8r0wn/nullinux<br><br>
 
+####More Information
+https://m8r0wn.blogspot.com<br><br>
