@@ -1,4 +1,4 @@
-              nullinux | v3.0
+              nullinux | v3.5
     SMB Null Session Enumeration Tool
 
 HOST:
