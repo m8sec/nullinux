@@ -61,7 +61,7 @@ class nullinux():
         if self.users:
             if self.acquired_users:
                 print "\n\033[1;32m[+]\033[1;m %s USER(s) identified in %s GROUP(s)" % (len(self.acquired_users), self.group_count)
-                print "\033[1;34m[*]\033[1;m Writing users to file: ./nullinux_sers.txt"
+                print "\033[1;34m[*]\033[1;m Writing users to file: ./nullinux_users.txt"
                 self.create_userfile()
             else:
                 print "\n\033[1;31m[-]\033[1;m No valid users or groups detected"
@@ -435,8 +435,8 @@ More Options:
 
 Example Usage:
     python nullinux.py -users -quick DC1.Domain.net
-    python nullinux.py --all 192.168.0.0-5
-    python nullinux.py --shares 10.0.0.1,10.0.0.5
+    python nullinux.py -all 192.168.0.0-5
+    python nullinux.py -shares -U 'Domain\User' -P 'Password1' 10.0.0.1,10.0.0.5
     python nullinux.py 10.0.0.0/24
 
     """ % (nullinux.version)
