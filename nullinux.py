@@ -1,607 +1,450 @@
-#!/usr/bin/python2.7
-# MIT license 2016
-# Copyright (c) 2016
+#!/user/bin/python2.7
+
 # Author: m8r0wn
+# Script: nullinux.py
+# Category: recon
 
-# Usage
-#-----------------------------------------------
-# nullinux is meant to be a quick enumeration of
-# SMB shares on a network. This can be done
-# with either an smb null session or given username
-# and password. 
+# Description:
+# SMB null session enumeration tool
 
-# Disclaimer
-#------------------------------------------------
+# Disclaimer:
 # This tool was designed to be used only with proper
 # consent. Use at your own risk.
 
 import sys
-import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
-from scapy.all import *
-import socket
-import commands
+import re
+import os
 import datetime
+from commands import getoutput
+
+class nullinux():
+    version         = "v4.0"
+    verbose         = False
+    shares          = False
+    users           = False
+    quick           = False
+    username        = "\'\'"
+    password        = "\'\'"
+    known_users     = ['Administrator', 'Guest', 'krbtgt', 'root', 'bin']
+    domain_sid      = ""
+    acquired_users  = []
+    group_count     = 0
+
+    def __init__(self):
+        #Get Class Variables from sys args
+        self.parse_args()
+        #Start Enumeration
+        print"\n    Starting nullinux %s | %s\n\n" % (self.version, datetime.datetime.now().strftime('%m-%d-%Y %H:%M'))
+        for t in self.list_targets():
+            self.enum_os(t)
+            if self.shares:
+                print "\n\033[1;34m[*]\033[1;m Enumerating Shares for: %s" % (t)
+                self.enum_shares(t)
+            if self.users:
+                if not self.domain_sid:
+                    print "\n\033[1;34m[*]\033[1;m Enumerating Domain Information for: %s" % (t)
+                    self.get_dom_sid(t)
+                print "\n\033[1;34m[*]\033[1;m Enumerating querydispinfo for: %s" % (t)
+                self.enum_querydispinfo(t)
+                print "\n\033[1;34m[*]\033[1;m Enumerating enumdomusers for: %s" % (t)
+                self.enum_enumdomusers(t)
+                if not self.quick:
+                    print "\n\033[1;34m[*]\033[1;m Enumerating LSA for: %s" % (t)
+                    self.enum_lsa(t)
+                    print "\n\033[1;34m[*]\033[1;m Performing RID Cycling for: %s" % (t)
+                    self.enum_RIDcycle(t)
+                    print "\n\033[1;34m[*]\033[1;m Testing %s for Known Users" % (t)
+                    self.enum_known_users(t)
+                print "\n\033[1;34m[*]\033[1;m Enumerating Group Memberships for: %s" % (t)
+                self.enum_dom_groups(t)
+        #Create nullinux_users.txt file
+        if self.users:
+            if self.acquired_users:
+                print "\n\033[1;32m[+]\033[1;m %s USER(s) identified in %s GROUP(s)" % (len(self.acquired_users), self.group_count)
+                print "\033[1;34m[*]\033[1;m Writing users to file: ./nullinux_sers.txt"
+                self.create_userfile()
+            else:
+                print "\n\033[1;31m[-]\033[1;m No valid users or groups detected"
+
+        print "\n",
+        self.print_status("Scan Complete\n\n")
+
+    def parse_args(self):
+        try:
+            if "-v" in sys.argv or "-V" in sys.argv:
+                self.verbose = True
+            if "-P" in sys.argv:
+                self.password = "\'%s\'" % (sys.argv[sys.argv.index("-P") + 1])
+            if "-U" in sys.argv:
+                self.username = "\'%s\'" % (sys.argv[sys.argv.index("-U") + 1])
+
+            if "--enumshares" in sys.argv:
+                print "\033[1;31m[-]\033[1;m Depreciating option, please use \"-shares\""
+                self.shares = True
+            elif "-shares" in sys.argv:
+                self.shares = True
+
+            if "--enumusers" in sys.argv:
+                print "\033[1;31m[-]\033[1;m Depreciating option, please use \"-users\""
+                self.users = True
+            elif "-users" in sys.argv:
+                self.users = True
+
+            if "--all" in sys.argv:
+                print "\033[1;31m[-]\033[1;m Depreciating option, please use \"-users\""
+                self.shares = True
+                self.users = True
+            elif "-all" in sys.argv:
+                self.shares = True
+                self.users = True
+
+            if "-quick" in sys.argv:
+                self.quick = True
+        except:
+            print "\n[!] Error parsing command line arguments"
+            print "[*] Please close and try again...\n\n"
+            sys.exit(0)
+
+    def list_targets(self):
+        targets = []
+        single_ip = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+        ip_range = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}-\d{1,3}$")
+        cidr = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$")
+        t = sys.argv[-1]
+        try:
+            #Cidr Range /24 only
+            if cidr.match(t):
+                temp = t.split("/")
+                if int(temp[1]) != 24:
+                    print "invalid target range cider"
+                    sys.exit(0)
+                A1, A2, A3, A4 = temp[0].split(".")
+                for x in range(0, 256):
+                    target = A1 + "." + A2 + "." + A3 + "." + `x`
+                    targets.append(target)
+            #IP Ranges 0-255
+            elif ip_range.match(t):
+                t.split("-")
+                if int(t[1]) > 255:
+                    print "[-] Invalid target range\n"
+                    sys.exit()
+                A, B = t.split("-")
+                A1, A2, A3, A4 = A.split(".")
+                for x in range(int(A4), int(B) + 1):
+                    t = A1 + "." + A2 + "." + A3 + "."
+                    t += `x`
+                    targets.append(t)
+            #Multip IP's 192.168.1.1,192.168.1.3
+            elif "," in sys.argv[-1]:
+                for t in sys.argv[-1].split(","):
+                    targets.append(t)
+            #List of single IP addresses, one-per-line
+            elif ".txt" in t:
+                if not os.path.exists(t):
+                    print "[-] File not found, please try again"
+                    sys.exit(0)
+                targets = [line.strip() for line in open(t)]
+                #check file for valid targets
+                for x in targets:
+                    if not single_ip.match(x):
+                        print "valid target not identified in file"
+                        sys.exit(0)
+            else:
+                targets.append(t)
+        except:
+            print "[-] Error parsing target\n[*] use -h for more information\n\n"
+            sys.exit(0)
+
+        # check for targets after parsing sys args
+        if not targets:
+            print "\n[-] Error: No valid target detected\n\n"
+            sys.exit(0)
+        # return targets
+        self.print_status("Targets Acquired, starting enumeration...\n")
+        return targets
+
+    def print_success(self,msg):
+        print '\033[1;32m[+]\033[1;m', msg
+
+    def print_status(self,msg):
+        print '\033[1;34m[*]\033[1;m', msg
+
+    def print_failure(self, msg):
+        print '\033[1;31m[-]\033[1;m', msg
+
+    def enum_os(self, target):
+        #Uses null session as opposed to username and password
+        cmd = "smbclient //%s/IPC$ -U %s%%%s -t 1 -c exit" % (target, '', '')
+        for line in getoutput(cmd).splitlines():
+            if "Domain=" in line:
+                self.print_success("%s: %s" % (target, line))
+            elif "NT_STATUS_LOGON_FAILURE" in line:
+                self.print_failure("%s: Authentication Failed" % (target))
+
+    def get_dom_sid(self, target):
+        cmd = "rpcclient -c lsaquery -U %s%%%s %s" % (self.username, self.password, target)
+        for line in getoutput(cmd).splitlines():
+            if "Domain Name:" in line:
+                self.print_success(line)
+            elif "Domain Sid:" in line:
+                self.domain_sid = line.split(":")[1].strip()
+                self.print_success("Domain SID: %s" % (self.domain_sid))
+        if not self.domain_sid:
+            self.print_failure("Could not attain Domain SID")
+
+    def create_userfile(self):
+        openfile = open('nullinux_users.txt', 'w')
+        for user in self.acquired_users:
+            if user == self.acquired_users[0]:
+                openfile.write(user)
+            else:
+                openfile.write('\n%s' % user)
+        openfile.close()
+
+    def enum_shares(self, target):
+        count = 0
+        acquired_shares = []
+        smbclient_types = ['Disk', 'IPC', 'Printer']
+        cmd = "smbclient -L %s -U %s%%%s -t 2" % (target, self.username, self.password)
+        for line in getoutput(cmd).splitlines():
+            for t in smbclient_types:
+                if t in line:
+                    try:
+                        if count == 0:
+                            print "         %-26s %s" % ("Shares", "Comments")
+                            print "   ", "-"*43
+                        if "IPC" == t:
+                            print "    \\\%s\%-15s %s" % (target, "IPC$", comment)
+                            acquired_shares.append(share)
+                        else:
+                            share = line.split(t)[0].strip()
+                            comment = line.split(t)[1].strip()
+                            print "    \\\%s\%-15s %s" % (target, share, comment)
+                            acquired_shares.append(share)
+                        count += 1
+                    except KeyboardInterrupt:
+                        print "\n[!] Key Event Detected...\n\n"
+                        sys.exit(0)
+                    except:
+                        print "    ", line
+
+
+        #Enumerate dir of each new share
+        if acquired_shares:
+            for s in acquired_shares:
+                self.enum_dir(target, s)
+        else:
+            self.print_failure("No Shares Detected")
+
+    def enum_dir(self, target, share):
+        print "\n   ",
+        self.print_status("Enumerating: \\\%s\%s" % (target, share))
+        cmd = "smbclient //%s/%s -t 3 -U %s%%%s -c dir" % (target, share, self.username, self.password)
+        for line in getoutput(cmd).splitlines():
+            if "NT_STATUS_LOGON_FAILURE" in line or "NT_STATUS_ACCESS_DENIED" in line:
+                print "   ",
+                self.print_failure("Access Denied")
+            elif "NT_STATUS_UNSUCCESSFUL" in line:
+                print "   ",
+                self.print_status("Connection Unsuccessful")
+            elif "NT_STATUS_IO_TIMEOUT" in line:
+                print "   ",
+                self.print_status("Connection Timed Out")
+            elif "Domain=" in line or "blocks available" in line or "WARNING" in line or "failed:" in line or not line:
+                pass
+            else:
+                print "    ", line
+
+
+    def enum_querydispinfo(self, target):
+        cmd = "rpcclient -c querydispinfo -U %s%%%s %s" % (self.username, self.password, target)
+        for line in getoutput(cmd).splitlines():
+            try:
+                user_account = line.split("Name:")[0].split("Account:")[1].strip()
+                print "   ", user_account
+                if user_account not in self.acquired_users:
+                    self.acquired_users.append(user_account)
+            except KeyboardInterrupt:
+                print "\n[!] Key Event Detected...\n\n"
+                sys.exit(0)
+            except:
+                pass
+
+
+    def enum_enumdomusers(self, target):
+        cmd = "rpcclient -c enumdomusers -U %s%%%s %s" % (self.username, self.password, target)
+        for line in getoutput(cmd).splitlines():
+            try:
+                user_account = line.split("[")[1].split("]")[0].strip()
+                print "   ", user_account
+                if user_account not in self.acquired_users:
+                    self.acquired_users.append(user_account)
+            except KeyboardInterrupt:
+                print "\n[!] Key Event Detected...\n\n"
+                sys.exit(0)
+            except:
+                pass
+
+
+    def enum_lsa(self, target):
+        cmd = "rpcclient -c lsaenumsid -U %s%%%s %s" % (self.username, self.password, target)
+        output = getoutput(cmd)
+        for line in output.splitlines():
+            try:
+                if "S-1-5-21" in line:
+                    user_sid = "rpcclient -c 'lookupsids %s' -U %s%%%s %s" % (line, self.username, self.password, target)
+                    for x in getoutput(user_sid).splitlines():
+                        user_account = x.split("\\")[1].split("(")[0].strip()
+                        count = int(x.split("(")[1].split(")")[0].strip())
+                        if count == 1:
+                            if self.verbose:
+                                print "   ", x
+                            else:
+                                print "   ", user_account
+                            if user_account not in self.acquired_users:
+                                self.acquired_users.append(user_account)
+                        elif count > 1 and "*unknown*\*unknown*" not in line:
+                            if self.verbose:
+                                print "    %-35s (Network/LocalGroup)" % (x)
+                            else:
+                                print "    %-35s (Network/Local Group)" % (user_account)
+            except KeyboardInterrupt:
+                print "\n[!] Key Event Detected...\n\n"
+                sys.exit(0)
+            except:
+                pass
+
+    def enum_RIDcycle(self, target):
+        if not self.domain_sid:
+            self.print_failure("RID Failed: Could not attain Domain SID")
+            return False
+        rid_range = list(range(500, 530))
+        for rid in rid_range:
+            try:
+                cmd = "rpcclient -c \"lookupsids %s-%s\" -U %s%%%s %s" % (self.domain_sid, rid, self.username, self.password, target)
+                for line in getoutput(cmd).splitlines():
+                    if "S-1-5-21" in line:
+                        user_account = line.split("\\")[1].split("(")[0].strip()
+                        count = int(line.split("(")[1].split(")")[0].strip())
+                        if count == 1:
+                            if self.verbose:
+                                print "   ",line
+                            else:
+                                print "   ", user_account
+                            if user_account not in self.acquired_users:
+                                self.acquired_users.append(user_account)
+                        elif count > 1 and "*unknown*\*unknown*" not in line:
+                            if self.verbose:
+                                print "    %-35s (Network/LocalGroup)" % (line)
+                            else:
+                                print "    %-35s (Network/Local Group)" % (user_account)
+            except KeyboardInterrupt:
+                print "\n[!] Key Event Detected...\n\n"
+                sys.exit(0)
+            except:
+                pass
+
+    def enum_known_users(self, target):
+        for user in self.known_users:
+            cmd = "rpcclient -c \"lookupnames %s\" -U %s%%%s %s" % (user, self.username, self.password, target)
+            for line in getoutput(cmd).splitlines():
+                if "S-1-5" in line:
+                    try:
+                        user_account = line.split(" ")[0].strip()
+                        if self.verbose:
+                            print "   ", line
+                        else:
+                            print "   ", user_account
+                        if user_account not in self.acquired_users and int(line.split("User:")[1]) == 1:
+                            self.acquired_users.append(user_account)
+                    except KeyboardInterrupt:
+                        print "\n[!] Key Event Detected...\n\n"
+                        sys.exit(0)
+                    except:
+                        pass
+
+    def enum_dom_groups(self, target):
+        cmd = "rpcclient -c enumdomgroups -U %s%%%s %s" % (self.username, self.password, target)
+        for line in getoutput(cmd).splitlines():
+            if "rid:" in line:
+                try:
+                    group = line.split("[")[1].split("]")[0].strip()
+                    self.print_success("Group: %s" % (group))
+                    self.group_count += 1
+                    self.enum_group_mem(target, group)
+                except KeyboardInterrupt:
+                    print "\n[!] Key Event Detected...\n\n"
+                    sys.exit(0)
+                except:
+                    pass
+
+    def enum_group_mem(self, target, group):
+        cmd = "net rpc group members \'%s\' -U %s%%%s -I %s" % (group, self.username, self.password, target)
+        for line in getoutput(cmd).splitlines():
+            try:
+                user_account = line.split("\\")[1].strip()
+                print "   ", user_account
+                if user_account not in self.acquired_users:
+                    self.acquired_users.append(user_account)
+            except KeyboardInterrupt:
+                print "\n[!] Key Event Detected...\n\n"
+                sys.exit(0)
+            except:
+                pass
+
+def main():
+    #Print Help Banner
+    if "-h" in sys.argv or len(sys.argv) == 1: banner()
+    try:
+        #New class object
+        scan = nullinux()
+    except KeyboardInterrupt:
+        print "\n[!] Key Event Detected, exiting...\n\n"
+        sys.exit(0)
+    except Exception as e:
+        print "\n[*] Main Error: %s\n\n" % (e)
 
 def banner():
-    print"""
+    print """
+                 nullinux | %s
+         SMB Null Session Enumeration Tool
 
-              nullinux | %s
-    SMB Null Session Enumeration Tool
+Scanning:
+    -shares             Dynamically Enumerate all possible
+                        shares. (formally: --enumshares)
 
-HOST:
-  -U                  	Set username    (optional)
-  -P                  	Set Password    (optional)
+    -users              Enumerate users through a variety of
+                        techniques. (formally: --enumusers)
 
-CONNECTION:
-  -sT                 	TCP Connection scan
-  -sS                 	Stealth Scan 	(Default)
-  -sN                 	Don't Check for open smb-related ports(Just connect)
-  -p			Specify ports 	(Default: 139,445) 		      	
+    -quick              Quickly enumerate users, leaving out brute
+                        force options. (used with: -users, or -all)
 
-SHARES:
-  --enumshares        	Enumerate possible shares
-  -S share1,share2..  	Specify share(s)
-  -A                  	Try shares [IPC$, ADMIN$, C$]
+    -all                Enumerate both users and shares
+                        (formally: --all)
 
-USERS:
-  --enumusers         	Enumerate users
-  --range #-#         	Specify range for RID cycling (Default range: 0-35,500-535)
+Host:
+    -U                  Set username (optional)
 
-MORE OPTIONS:
-  --all		      	Invoke all options [enumshares, enumusers]
-  -v	       	      	verbose output
-  -h	       	      	help
+    -P                  Set password (optional)
 
-EXAMPLES:
-  ./nullinux.py -sT -v --enumusers 10.0.0.1-10
-  ./nullinux.py -sN -U Administrator -P password --all 10.0.0.10
-  ./nullinux.py 10.0.0.1-255
+More Options:
+    -v                  Verbose Output
 
-    """ % (version)
+    -h                  Help menu
+
+
+Example Usage:
+    python nullinux.py -users -quick DC1.Domain.net
+    python nullinux.py --all 192.168.0.0-5
+    python nullinux.py --shares 10.0.0.1,10.0.0.5
+    python nullinux.py 10.0.0.0/24
+
+    """ % (nullinux.version)
     sys.exit(0)
 
-def startUp():
-    currentTime = datetime.datetime.now().strftime('%m-%d-%Y %H:%M')
-    print"\nStarting nullinux %s | %s" % (version, currentTime)
-
-#Port scan: Stealth Scan (Default)/TCP Scan --based on response flag sent.
-def portScan(rsp_flag):
-    targets_enum = []
-    print "[+] Port scanning targets"
-    #Look for open SMB port for each target in list
-    for t in targets_portScan:
-        openPorts = 0
-        for p in ports:
-	    try:
-		srcPort = RandShort()
-		scan = sr1(IP(dst=t)/TCP(sport=srcPort, dport=p, flags="S"), timeout=1, verbose=0)
-		if (scan.haslayer(TCP)):
-		    if (scan.getlayer(TCP).flags == 0x12):
-			reset = sr(IP(dst=t)/TCP(sport=srcPort, dport=p, flags=rsp_flag),timeout=3, verbose=0)
-			openPorts += 1
-		        if verbose: print "    + %s : %s Open" % (t,p)
-		    else:
-		        if verbose: print "    - %s : %s Closed" % (t,p)
-		else:
-		    if verbose: print "    - %s : %s Closed" % (t,p)
-	    except:
-		if verbose: print "    - %s : %s Closed" % (t,p)
-        if openPorts >= 1: targets_enum.append(t)
-    #Exit if no SMB ports found
-    if not targets_enum:
-        if verbose:
-            print "\n[-] No SMB ports detected\n"
-            sys.exit(0)
-        else:
-            print "\n[-] No SMB ports detected, use -v for more information\n"
-            sys.exit(0)
-    else:
-	print "\n"
-	enum_main(targets_enum)
-
-def enum_main(targets_enum):
-    temp_users_collected = []
-    users_collected = []
-    groups_collected = []
-    #Gather domain information for RID cycling
-    if enumusers:
-	print "[*] Gathering Domain information"
-	domain_info = enumerate_domain(targets_enum[0])
-	if not domain_info and targets_enum[0] != targets_enum[-1]:
-	    print "    *Retrying domain enumeration"
-	    domain_info = enumerate_domain(targets_enum[1])
-	    if not domain_info:
-		print"    - Domain Enumeration Failed, RID Cycling Disabled\n"
-	if not domain_info and targets_enum[0] == targets_enum[-1]:
-	    print"    - Domain Enumeration Failed, RID Cycling Disabled\n"
-
-    #Gather os information
-    for t in targets_enum:
-	smb_info = "smbclient //%s/IPC$ -U %s%%%s -c exit" % (t, username, password)
-        smb_info_output = commands.getstatusoutput(smb_info)
-        for line in smb_info_output[1].splitlines():
-            if "WARNING" in line:		pass
-	    elif "BAD_NETWORK_NAME" in line: 	pass
-	    elif "Error" in line: 		pass
-	    elif "failed" in line: 		pass
-            else:				print "[+] %s: %s" % (t, line)
-	#Begin share/user enumeration
-	if enumshares and enumusers:
-	    enumerate_shares(t)
-	    temp_users_collected += enum_querydispinfo(t)
-	    temp_users_collected += enum_enumdomusers(t)
-	    temp_users_collected += enum_lsa(t)
-	    if domain_info: 
-		temp_users_collected += enum_RIDcycle(t,domain_info[0])
-	    temp_users_collected += enum_known_users(t)
-	    enum_users, enum_groups = enum_group_mem(t)
-	    temp_users_collected += enum_users
-	    groups_collected += enum_groups
-	    for user in temp_users_collected:
-		if user not in users_collected:
-		    users_collected.append(user)
-
-	elif enumshares: 
-	    enumerate_shares(t)
-
-	elif enumusers: 
-	    temp_users_collected += enum_querydispinfo(t)
-	    temp_users_collected += enum_enumdomusers(t)
-	    temp_users_collected += enum_lsa(t)
-	    if domain_info: 
-		temp_users_collected += enum_RIDcycle(t,domain_info[0])
-	    temp_users_collected += enum_known_users(t)
-	    enum_users, enum_groups = enum_group_mem(t)
-	    temp_users_collected += enum_users
-	    groups_collected += enum_groups
-	    for user in temp_users_collected:
-		if user not in users_collected:
-		    users_collected.append(user)
-    #Closing
-    if enumusers:
-        print "[*] Found %s USER(S) and %s GROUP(S) for %s" % (len(users_collected), len(groups_collected), sys.argv[-1]) 	
-        if not users_collected: 
-	    print "[-] No Users Found\n[-] Closing\n"
-	    sys.exit(0)
-        else:
-	    print "[*] Generating user list nullinux_users.txt"
-	    #Create user list
-	    openfile = open('nullinux_users.txt' , 'w')		    
-	    for user in users_collected:
-	        if user == users_collected[-1]: 
-		    openfile.write('%s' % user)
-	        else:				
-		    openfile.write('%s\n' % user)
-	    openfile.close()
-	    print "[+] File complete\n[*] Closing\n"
-	    sys.exit(0)
-    else:
-	print "\n", sys.exit(0)
-
-def enumerate_domain(target):
-    domain_info = []
-    lsaquery = "rpcclient -c lsaquery -U %s%%%s %s" % (username, password, target)
-    lsaquery_output = commands.getstatusoutput(lsaquery)
-    for line in lsaquery_output[1].splitlines():
-	try:
-	    if "Domain Name:" in line:
-    	        #label1, domain_name = line.split(":")
-    	        #domain_name = domain_name.lstrip()
-    	        #domain_name = domain_name.rstrip()
-	        #domain_info.append(domain_name)
-    	        #print "    +Domain Name: %s" % (domain_name)
-		print "    +",line
-	    elif "Domain Sid:" in line:
-    	        label2, domain_sid = line.split(":")
-    	        domain_sid = domain_sid.lstrip()
-    	        domain_sid = domain_sid.rstrip()
-	        domain_info.append(domain_sid)
-    	        print "    + Domain SID: %s\n" % (domain_sid)
-	except:
-	    print "    *",line
-    if not domain_info or "NULL" in domain_sid:
-	return False
-    else:	
-	return domain_info
-
-
-def enumerate_shares(t):
-    t_shares = []
-    print "    [*] Enumerating shares for %s" % (t)
-    enum_shares = "smbclient -L %s -U %s%%%s" % (t, username, password)
-    enum_shares_output = commands.getstatusoutput(enum_shares)
-    for line in enum_shares_output[1].splitlines():
-	if "Domain=[" in line: 			pass
-	elif line == "": 			pass
-	elif "RESOURCE_NAME_NOT_FOUND" in line: pass
-	elif "TCP disabled" in line: 		pass
-	elif "WARNING" in line: 		pass
-	elif "Sharename" in line: 		print 	"         ", line
-	elif "---------" in line: 		print 	"         ", line
-	elif "DENIED" in line: 			print 	"        -", line
-	elif "disabled" in line: 		print 	"        -", line
-	elif "failed" in line: 			print 	"        -", line
-        elif "Domain" in line: 			print 	"         ", line
-        elif "DOMAIN" in line: 			print 	"         ", line
-        elif "Workgroup" in line: 		print 	"         ", line
-	else:
-	    try: 	
-	        #Take shares found and add to t_shares list
-	        share_string = line.split(' ')
-	        s = share_string[0].lstrip()
-	        s = s.rstrip()
-	        if s not in shares: t_shares.append(s)				
-	        print "        +", line
-	    except:
-		print "        *", line
-    #Enum directory from shares dynamically gathered
-    for s in shares:
-        enum_dir = "smbclient //%s/%s -U %s%%%s -c dir" % (t, s, username, password)
-        enum_dir_output = commands.getstatusoutput(enum_dir)
-        print "\n    [*] Enumerating Directory for %s @ %s" % (t,s)
-        for line in enum_dir_output[1].splitlines():
-	    if "Domain=[" in line: 			pass
-	    elif line == "": 				pass
-	    elif "RESOURCE_NAME_NOT_FOUND" in line: 	pass
-	    elif "TCP disabled" in line: 		pass
-	    elif "WARNING" in line: 			pass
-	    elif "Sharename" in line: 			print 	"         ", line
-	    elif "---------" in line: 			print 	"         ", line
-	    elif "DENIED" in line: 			print 	"        -", line
-	    elif "disabled" in line: 			print 	"        -", line
-	    elif "failed" in line: 			print 	"        -", line
-	    else: 					print 	"        +", line   
-    #Enum directory from local target shares found				
-    for s in t_shares:
-        enum_dir = "smbclient //%s/%s -U %s%%%s -c dir" % (t, s, username, password)
-        enum_dir_output = commands.getstatusoutput(enum_dir)
-        print "\n    [*] Enumerating Directory for %s @ %s" % (t,s)
-        for line in enum_dir_output[1].splitlines():
-	    if "Domain=[" in line: 			pass
-	    elif line == "": 				pass
-	    elif "RESOURCE_NAME_NOT_FOUND" in line: 	pass
-	    elif "TCP disabled" in line: 		pass
-	    elif "WARNING" in line: 			pass
-	    elif "Sharename" in line: 			print 	"         ", line
-	    elif "---------" in line: 			print 	"         ", line
-	    elif "DENIED" in line: 			print 	"        -", line
-	    elif "disabled" in line: 			print 	"        -", line
-	    elif "failed" in line: 			print 	"        -", line
-	    else: 					print 	"        +", line
-
-def enum_querydispinfo(t):
-    temp_users_collected = []
-    print "\n    [*] Enumerating users for %s through querydispinfo:" % (t)
-    enum_user = "rpcclient -c querydispinfo -U %s%%%s %s" % (username, password, t)
-    enum_user_output = commands.getstatusoutput(enum_user)
-    for line in enum_user_output[1].splitlines():
-        if "DENIED" in line: 		pass #print 	"        -", line
-        elif "error" in line: 		pass #print 	"        -", line
-        elif "failed" in line: 		pass #print 	"        -", line
-        elif "could not" in line: 	pass #print 	"        -", line
-        elif "disabled" in line: 	pass #print 	"        -", line
-        else:	
-	    try:
-	        #Split output to get user			
-	        name_split = line.split(": ")
-                temp_name = name_split[4]
-                temp_name = temp_name.split("Name")
-                temp_name = temp_name[0].lstrip()
-                temp_name = temp_name.rstrip()
-                print "        +",temp_name
-	        temp_users_collected.append(temp_name)
-	    except:
-		print "        *",line
-    return temp_users_collected
-
-def enum_enumdomusers(t):
-    temp_users_collected = []
-    print "\n    [*] Enumerating users for %s through enumdomusers:" % (t)
-    enum_dom_user = "rpcclient -c enumdomusers -U %s%%%s %s" % (username, password, t)
-    enum_dom_user_output = commands.getstatusoutput(enum_dom_user)	
-    for line in enum_dom_user_output[1].splitlines():
-        if "DENIED" in line: 		pass #print 	"        -", line
-        elif "error" in line: 		pass #print 	"        -", line
-        elif "failed" in line: 		pass #print 	"        -", line
-        elif "could not" in line: 	pass #print 	"        -", line
-        elif "disabled" in line: 	print 	"        -", line
-        else:
-	    try:
-	        #Split output to get user				
-	        name_split = line.split("[")
-	        temp_name = name_split[1]
-                temp_name = temp_name.split("]")
-                temp_name = temp_name[0].lstrip()
-                temp_name = temp_name.rstrip()
-                print "        +",temp_name
-       	        temp_users_collected.append(temp_name)
-	    except:
-		print "        *",line
-    return temp_users_collected
-
-def enum_lsa(t):
-    temp_users_collected = []
-    sids_collected = []
-    print "\n    [*] Enumerating users for %s through Local Security Authority" % (t)
-    lsa_sids = "rpcclient -c lsaenumsid -U %s%%%s %s" % (username, password, t)
-    lsa_sids_output = commands.getstatusoutput(lsa_sids)
-    if verbose: print "        [*] SIDS:"
-    for line in lsa_sids_output[1].splitlines():
-	if "S-1-5-21" in line:
-	    sids_collected.append(line)
-	    if verbose: print "            +",line
-    if sids_collected:
-	if verbose: print "        [*] Users:"
-	for sid in sids_collected:
-	    user_sid = "rpcclient -c 'lookupsids %s' -U %s%%%s %s" % (sid, username, password, t)
-	    user_sid_output = commands.getstatusoutput(user_sid)
-	    for line in user_sid_output[1].splitlines():
-        	if "DENIED" in line: 		pass #print 	"        -", line
-        	elif "INVALID_SID" in line: 	pass #print 	"        -", line
-        	elif "error" in line: 		pass #print 	"        -", line
-        	elif "failed" in line: 		pass #print 	"        -", line
-        	elif "NONE_MAPPED" in line: 	pass #print 	"        -", line
-		elif "*unknown*" in line: 	pass #print 	"        -", line
-		elif "could not" in line: 	pass #print 	"        -", line
-        	elif "disabled" in line: 	
-		    if verbose:	print 	"            -", line
-		    else:	print 	"        -", line
-        	else:
-		    try:
-	    	        #Split output to get user
-		        temp_line = line.split(" (")
-		        temp_num = temp_line[1].split(")")
-		        if "1" in temp_num[0]: #temp_num[0] number of members
-    			    temp_name = temp_line[0].split("\\")
-    			    temp_name = temp_name[1].rstrip()
-    			    temp_name = temp_name.lstrip()
-			    if verbose: 	print "            +",temp_name
-			    else:		print "        +",temp_name
-       	        	    temp_users_collected.append(temp_name)
-		        else:
-			    temp_name = temp_line[0].split("\\")
-    			    temp_name = temp_name[1].rstrip()
-    			    temp_name = temp_name.lstrip()
-			    if verbose: 	print "            + %-35s (Network/Local Group)" % (temp_name)
-			    else:		print "        + %-35s (Network/Local Group)" % (temp_name)
-		    except:
-			 print "        *",line
-    else: 
-	print "            - Failed to Enumerate LSA"
-    return temp_users_collected
-
-def enum_RIDcycle(t, domain_sid):
-    temp_users_collected = []
-    #Start RID Cycling
-    print "\n    [*] Starting RID cycling for %s" % (t)
-    #Set custom range for brute_force
-    if "--range" in sys.argv:
-	temp_rid_range = sys.argv.index("--range")+1
-	if "-" not in sys.argv[temp_rid_range]:
-	    print "[-] Error: Incorrect range for brute_force"
-	    sys.exit(0)
-	try:
-	    rid_one, rid_two = sys.argv[temp_rid_range].split("-")
-	    rid_range = list(range(int(rid_one),int(rid_two)+1))
-	except:
-	    print "        [*] Error: Default Values Being Used"
-	    rid_range = list(range(0,36))+list(range(500,536))
-    else:
-	rid_range = list(range(0,36))+list(range(500,536))
-    #Start Enumeration
-    for rid in rid_range:
-        user_rid = "rpcclient -c \"lookupsids %s-%s\" -U %s%%%s %s" % (domain_sid, rid, username, password, t)
-	user_rid_output = commands.getstatusoutput(user_rid)
-	for line in user_rid_output[1].splitlines():
-            if "DENIED" in line: 	pass #print 	"        -", line
-            elif "INVALID_SID" in line: pass #print 	"        -", line
-            elif "error" in line: 	pass #print 	"        -", line
-            elif "failed" in line: 	pass #print 	"        -", line
-            elif "NONE_MAPPED" in line: pass #print 	"        -", line
-	    elif "*unknown*" in line: 	pass #print 	"        -", line
-	    elif "could not" in line: 	pass #print 	"        -", line
-            elif "disabled" in line: 	print 	"        -", line
-            else:
-		try:
-	            #Split output to get user
-		    temp_line = line.split(" (")
-		    temp_num = temp_line[1].split(")")
-		    if "1" in temp_num[0]: #temp_num[0] number of members
-    		        temp_name = temp_line[0].split("\\")
-    		        temp_name = temp_name[1].rstrip()
-    		        temp_name = temp_name.lstrip()
-		        print "        +",temp_name
-       	       	        temp_users_collected.append(temp_name)
-		    else:
-		        temp_name = temp_line[0].split("\\")
-    		        temp_name = temp_name[1].rstrip()
-    		        temp_name = temp_name.lstrip()
-		        print "        + %-35s (Network/Local Group)" % (temp_name)
-		except:
-		    print "        *",line
-    return temp_users_collected
-
-def enum_known_users(t):
-    temp_users_collected 	= []
-    known_usernames	= ['Administrator', 'Guest', 'krbtgt', 'root', 'bin']
-    print "\n    [*] Trying known usernames for %s" % (t)
-    for user in known_usernames:
-	known_user = "rpcclient -c \"lookupnames %s\" -U %s%%%s %s" % (user, username, password, t)
-	known_user_output = commands.getstatusoutput(known_user)
-	for line in known_user_output[1].splitlines():
-            if "DENIED" in line: 	pass #print 	"        -" + line + " (%s)" % user
-            elif "INVALID_SID" in line: pass #print 	"        -" + line + " (%s)" % user
-            elif "error" in line: 	pass #print 	"        -" + line + " (%s)" % user
-            elif "failed" in line: 	pass #print 	"        -" + line + " (%s)" % user
-            elif "NONE_MAPPED" in line: pass #print 	"        -" + line + " (%s)" % user
-	    elif "*unknown*" in line: 	pass #print 	"        -" + line + " (%s)" % user
-	    elif "could not" in line: 	pass
-	    elif "lsa pipe" in line:	pass
-            elif "disabled" in line: 	print 	"        -", line
-            else:
-		try:
-	    	    #Split output to get user
-	            temp_line = line.split(" S")
-    	    	    temp_name = temp_line[0].rstrip()
-		    temp_name = temp_name.lstrip()
-		    print "        +",temp_name
-       	            temp_users_collected.append(temp_name)
-		except:
-		    print "        *",line
-    return temp_users_collected
-
-def enum_group_mem(t):
-    temp_users_collected = []
-    groups_collected = []
-    print "\n    [*] Enumerating users by group memebership for %s" % (t)
-    domain_groups = "rpcclient -c enumdomgroups -U %s%%%s %s" % (username, password, t)
-    domain_groups_output = commands.getstatusoutput(domain_groups)
-    for line in domain_groups_output[1].splitlines():
-        if "DENIED" in line: 		pass #print 	"        -", line
-        elif "error" in line: 		pass #print 	"        -", line
-        elif "failed" in line: 		pass #print 	"        -", line
-        elif "could not" in line: 	pass #print 	"        -", line
-        elif "disabled" in line: 	print 	"        -", line
-	else:
-	    try:
-	        #Split output got get group
-	        a = line.split("]")
-	        b = a[0].split("[")
-  	        domain_group = b[1].lstrip()
-	        domain_group = domain_group.rstrip()
-	        print "        [+] Group:",domain_group
-	        if domain_group not in groups_collected:
- 	 	    groups_collected.append(domain_group)
-	        #Enumerate memebers of the group
-	        enum_members = "net rpc group members \'%s\' -U %s%%%s -I %s" % (domain_group, username, password, t)
-                enum_members_output = commands.getstatusoutput(enum_members)
-                for line in enum_members_output[1].splitlines():
-	            if "DENIED" in line: 	print 	"            -", line
-	            elif "disabled" in line: 	print 	"            -", line
-	            elif "error" in line: 	print 	"            -", line
-	            elif "failed" in line: 	print 	"            -", line
-	            elif "could not" in line: 	print 	"            -", line
-	            else:
-		        try:
-		            #Split output to get user
-    		            d = line.split("\\")
-		            domain_user = d[1].lstrip()
-		            domain_user = domain_user.rstrip()
-		            print "            +",domain_user
-		            temp_users_collected.append(domain_user)
-		        except:
-		            print "            *",line
-	    except:
-		print "        [*] Error with Group:",line
-    print "\n"
-    return temp_users_collected, groups_collected
-
-#Default Values
-version		    =   "v3.5"
-verbose	    	    =	False
-enumshares  	    =	False
-enumusers   	    =	False
-username    	    =	"\"\""
-password    	    =	"\"\""
-targets_portScan    =   []
-shares      	    =	['IPC$']
-ports		    =   [139, 445]	
-
-try:
-    #Display banner
-    if "-h" in sys.argv: banner()
-    elif len(sys.argv)== 1: banner()
-
-    #nullinux startup
-    startUp()
-
-    #Set Verbosity
-    if "-V" in sys.argv: verbose = True
-    if "-v" in sys.argv: verbose = True
-    #Set Enumerate shares
-    if "--enumshares" in sys.argv: enumshares = True
-    #Set Enumerate Users
-    if "--enumusers" in sys.argv: enumusers = True
-    #Set all
-    if "--all" in sys.argv: 
-	enumshares 	= True
-	enumusers	= True
-
-    #Set Targets
-    target = sys.argv[-1]
-    if "." not in target or len(target) < 7:
-        print "[-] Error: No target detected.\n"
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        print "\n[!] Key Event Detected...\n\n"
         sys.exit(0)
-    elif "-" in target and "," in target:
-        print "[-] Error: Invalid target detected.\n"
-        sys.exit(0)
-        #Range of IP's 127.0.0.1-255
-    elif "-" in target:
-	try:
-            A, B = target.split("-")
-            A1, A2, A3, A4 = A.split(".")
-            for x in range(int(A4), int(B)+1):
-                target = A1 + "." + A2 + "." + A3 + "."
-                target += `x`
-                targets_portScan.append(target)
-	except:
-	    print "[-] Error: Invalid target detected.\n"
-            sys.exit(0)
-        #Multiple IP's 127.0.0.1,127.0.0.2,127.0.0.3
-    elif "," in sys.argv[-1]:
-	try:
-            for t in sys.argv[-1].split(","):
-                targets_portScan.append(t)
-	except:
-	    print "[-] Error: Invalid target detected.\n"
-            sys.exit(0)
-        #Single IP 127.0.0.1
-    else:
-        targets_portScan.append(target)
-
-    #Set Shares
-    if "-S" in sys.argv:
-	shares = []
-        ID = sys.argv.index("-S")+1
-        for x in sys.argv[ID].split(","):
-            shares.append(x)
-    elif "-A" in sys.argv:
-        shares = ['IPC$', 'ADMIN$', 'C$']
-
-    #Set Username if provided
-    if "-U" in sys.argv:
-	username = sys.argv.index("-U")+1
-	username = sys.argv[username]
-
-    #Set Password if provided
-    if "-P" in sys.argv:
-	password = sys.argv.index("-P")+1
-	password = sys.argv[password]	
-
-    #Set Ports
-    if "-p" in sys.argv:
-	ports = []
-        port_nums = sys.argv.index("-p")+1
-	if type(port_nums) != int:
-	    print "[-] Error: Invalid ports provided.\n"
-        for x in sys.argv[port_nums].split(","):
-            ports.append(int(x))
-
-    #If multiple scans in sys.argv the first will be used
-    if "-sS" in sys.argv:
-	rsp_flag = "R"
-	portScan(rsp_flag)
-    elif "-sT" in sys.argv:
-	rsp_flag = "AR"
-	portScan(rsp_flag)
-    elif "-sN" in sys.argv:
-        print "[*] SMB port scanner disabled\n"
-        targets_enum = targets_portScan
-        enum_main(targets_enum)
-    else:
-	rsp_flag = "R"
-	portScan(rsp_flag)
-
-except KeyboardInterrupt: 
-    print "\n[-] Process Stopped: Closing nullinux...\n"
