@@ -8,9 +8,9 @@ _This program assumes Python 2.7, the Scapy module, and the Samba package are in
 
 ### Usage
 python nullinux.py -users -quick DC1.Domain.net<br>
-python nullinux.py --all 192.168.0.0-5<br>
-python nullinux.py --shares 10.0.0.1,10.0.0.5<br>
-python nullinux.py 10.0.0.0/24<br>
+python nullinux.py -all 192.168.0.0-5<br>
+python nullinux.py -shares -U 'Domain\User' -P 'Password1' 10.0.0.1,10.0.0.5<br>
+python nullinux.py 10.0.0.0/24
 
 
 

@@ -424,14 +424,11 @@ Scanning:
 
 Host:
     -U                  Set username (optional)
-
     -P                  Set password (optional)
 
 More Options:
     -v                  Verbose Output
-
     -h                  Help menu
-
 
 Example Usage:
     python nullinux.py -users -quick DC1.Domain.net
