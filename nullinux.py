@@ -116,8 +116,7 @@ class nullinux():
             if cidr.match(t):
                 temp = t.split("/")
                 if int(temp[1]) != 24:
-                    print "invalid target range cider"
-                    sys.exit(0)
+                    raise Exception("Invalid CIDR range, only /24 accepted")
                 A1, A2, A3, A4 = temp[0].split(".")
                 for x in range(0, 256):
                     target = A1 + "." + A2 + "." + A3 + "." + `x`
@@ -126,8 +125,7 @@ class nullinux():
             elif ip_range.match(t):
                 t.split("-")
                 if int(t[1]) > 255:
-                    print "[-] Invalid target range\n"
-                    sys.exit()
+                    raise Exception("Invalid target range")
                 A, B = t.split("-")
                 A1, A2, A3, A4 = A.split(".")
                 for x in range(int(A4), int(B) + 1):
@@ -141,18 +139,19 @@ class nullinux():
             #List of single IP addresses, one-per-line
             elif ".txt" in t:
                 if not os.path.exists(t):
-                    print "[-] File not found, please try again"
-                    sys.exit(0)
+                    raise Exception("File not found, please try again")
                 targets = [line.strip() for line in open(t)]
                 #check file for valid targets
                 for x in targets:
                     if not single_ip.match(x):
-                        print "valid target not identified in file"
-                        sys.exit(0)
+                        raise Exception("Valid target not identified in file")
+            #single IP or domain name
+            elif single_ip.match(t) or t.endswith((".com", ".net", ".local", ".org", ".int", ".edu", ".gov")):
+                   targets.append(t)
             else:
-                targets.append(t)
-        except:
-            print "[-] Error parsing target\n[*] use -h for more information\n\n"
+                raise Exception("Invalid target input provided")
+        except Exception as e:
+            print "[!] %s\n[*] use -h for more information\n\n" % (e)
             sys.exit(0)
 
         # check for targets after parsing sys args
@@ -424,11 +423,14 @@ Scanning:
 
 Host:
     -U                  Set username (optional)
+
     -P                  Set password (optional)
 
 More Options:
     -v                  Verbose Output
+
     -h                  Help menu
+
 
 Example Usage:
     python nullinux.py -users -quick DC1.Domain.net
