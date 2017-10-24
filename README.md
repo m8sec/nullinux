@@ -1,5 +1,6 @@
 # nullinux
 ### nullinux v4.0 just released!
+### For more information or to get started visit [https://m8r0wn-cyber.blogspot.com](https://m8r0wn-cyber.blogspot.com/p/nullinux.html)
 ### About
 nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, domain information, shares, directories, and users through SMB null sessions. Unlike many of the enumeration tools out there already, nullinux can enumerate multiple targets at once and when finished, creates a users.txt file of all users found on the host(s). This file is formatted for direct implementation and further exploitation._This program assumes Python 2.7, and the Samba package are installed on the machine._
 
