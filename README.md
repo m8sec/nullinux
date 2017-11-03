@@ -1,6 +1,6 @@
 # nullinux
 
-####  Featured on [toolswatch.org](http://www.toolswatch.org/2016/11/nullinux-v3-5-null-session-tool/)!
+####  Featured on [toolswatch.org](http://www.toolswatch.org/2016/11/nullinux-v3-5-null-session-tool/) and [KitPloit](http://www.kitploit.com/2017/11/nullinux-smb-null-session.html)!
 #### For more information or to get started visit [https://m8r0wn-cyber.blogspot.com/p/nullinux.html](https://m8r0wn-cyber.blogspot.com/p/nullinux.html)
 
 ### About
