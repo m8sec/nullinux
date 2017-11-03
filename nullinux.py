@@ -1,4 +1,4 @@
-#!/user/bin/python2.7
+#!/usr/bin/python2.7
 
 # Author: m8r0wn
 # Script: nullinux.py
