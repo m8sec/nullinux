@@ -17,13 +17,13 @@ else
     echo "[+] Python 2.7 installed"
 fi
 
-echo -e "[*] Checking for Samba client tools..."
+echo -e "[*] Checking for Samba tools..."
 if [[ $(samba -V 2>&1) == *"not found"* ]]
 then
-    echo -e "[*] Installing Samba client tools"
+    echo -e "[*] Installing Samba"
     apt-get install samba -y
 else
-    echo "[+] Samba client tools installed"
+    echo "[+] Samba installed"
 fi
 
 echo -e "\n[*] nullinux setup complete\n\n"
