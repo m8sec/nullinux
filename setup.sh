@@ -21,7 +21,7 @@ echo -e "[*] Checking for SMB client tools..."
 if [[ $(samba -V 2>&1) == *"not found"* ]]
 then
     echo -e "[*] Installing smbclient"
-    apt-get install samba -y
+    apt-get install smbclient -y
 else
     echo "[+] smbclient installed"
 fi
