@@ -17,8 +17,8 @@ else
     echo "[+] Python 2.7 installed"
 fi
 
-echo -e "[*] Checking for SMB client tools..."
-if [[ $(samba -V 2>&1) == *"not found"* ]]
+echo -e "[*] Checking for smbclient tools..."
+if [[ $(rpcclient -V 2>&1) == *"not found"* ]]
 then
     echo -e "[*] Installing smbclient"
     apt-get install smbclient -y
