@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #Check if Script run as root
-if ! [ $(id -u) = 0 ]; then
+if [[ $(id -u) != 0 ]]; then
 	echo -e "\n[!] Setup script needs to run as root.\n\n"
 	exit 0
 fi
