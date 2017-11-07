@@ -2,13 +2,13 @@
 
 #Check if Script run as root
 if [[ $(id -u) != 0 ]]; then
-	echo -e "\n[!] Setup script needs to run as root.\n\n"
+	echo -e "\n[!] Setup script needs to run as root\n\n"
 	exit 0
 fi
 
 echo -e "\n[*] Starting nullinux setup script"
 
-echo -e "[*] Checking for Python 2.7..."
+echo -e "[*] Checking for Python 2.7"
 if [[ $(python2.7 -V 2>&1) == *"not found"* ]]
 then
     echo -e "[*] Installing Python 2.7"
@@ -17,7 +17,7 @@ else
     echo "[+] Python 2.7 installed"
 fi
 
-echo -e "[*] Checking for smbclient..."
+echo -e "[*] Checking for smbclient"
 if [[ $(smbclient -V 2>&1) == *"not found"* ]]
 then
     echo -e "[*] Installing smbclient"
