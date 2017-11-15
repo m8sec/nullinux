@@ -36,10 +36,14 @@ class nullinux():
         #Start Enumeration
         print"\n    Starting nullinux %s | %s\n\n" % (self.version, datetime.datetime.now().strftime('%m-%d-%Y %H:%M'))
         for t in self.list_targets():
+            #Enumerate OS Info
             self.enum_os(t)
+            #Enumerate Shares & Dirs
             if self.shares:
                 print "\n\033[1;34m[*]\033[1;m Enumerating Shares for: %s" % (t)
                 self.enum_shares(t)
+                print "\n"
+            #Enumerate Users
             if self.users:
                 if not self.domain_sid:
                     print "\n\033[1;34m[*]\033[1;m Enumerating Domain Information for: %s" % (t)
@@ -48,6 +52,7 @@ class nullinux():
                 self.enum_querydispinfo(t)
                 print "\n\033[1;34m[*]\033[1;m Enumerating enumdomusers for: %s" % (t)
                 self.enum_enumdomusers(t)
+                #Longer methods of user enumeration
                 if not self.quick:
                     print "\n\033[1;34m[*]\033[1;m Enumerating LSA for: %s" % (t)
                     self.enum_lsa(t)
@@ -57,16 +62,14 @@ class nullinux():
                     self.enum_known_users(t)
                 print "\n\033[1;34m[*]\033[1;m Enumerating Group Memberships for: %s" % (t)
                 self.enum_dom_groups(t)
-        #Create nullinux_users.txt file
-        if self.users:
-            if self.acquired_users:
-                print "\n\033[1;32m[+]\033[1;m %s USER(s) identified in %s GROUP(s)" % (len(self.acquired_users), self.group_count)
-                print "\033[1;34m[*]\033[1;m Writing users to file: ./nullinux_users.txt"
-                self.create_userfile()
-            else:
-                print "\n\033[1;31m[-]\033[1;m No valid users or groups detected"
-
-        print "\n",
+                print "\n"
+                #Create nullinux_users.txt file
+                if self.acquired_users:
+                    print "\033[1;32m[+]\033[1;m %s USER(s) identified in %s GROUP(s)" % (len(self.acquired_users), self.group_count)
+                    print "\033[1;34m[*]\033[1;m Writing users to file: ./nullinux_users.txt\n"
+                    self.create_userfile()
+                else:
+                    print "\n\033[1;31m[-]\033[1;m No valid users or groups detected\n"
         self.print_status("Scan Complete\n\n")
 
     def parse_args(self):
@@ -214,7 +217,7 @@ class nullinux():
                             print "   ", "-"*43
                         if "IPC" == t:
                             print "    \\\%s\%-15s %s" % (target, "IPC$", comment)
-                            acquired_shares.append(share)
+                            acquired_shares.append("IPC$")
                         else:
                             share = line.split(t)[0].strip()
                             comment = line.split(t)[1].strip()
@@ -225,8 +228,8 @@ class nullinux():
                         print "\n[!] Key Event Detected...\n\n"
                         sys.exit(0)
                     except:
-                        print "    ", line
-
+                        #print "    ", line
+                        pass
 
         #Enumerate dir of each new share
         if acquired_shares:
