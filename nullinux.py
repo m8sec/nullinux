@@ -206,7 +206,7 @@ class nullinux():
     def enum_shares(self, target):
         count = 0
         acquired_shares = []
-        smbclient_types = ['Disk', 'IPC$', 'Printer']
+        smbclient_types = ['Disk', 'IPC', 'Printer']
         cmd = "smbclient -L %s -U %s%%%s -t 2" % (target, self.username, self.password)
         for line in getoutput(cmd).splitlines():
             if count == 0:
