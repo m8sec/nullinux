@@ -206,24 +206,24 @@ class nullinux():
     def enum_shares(self, target):
         count = 0
         acquired_shares = []
-        smbclient_types = ['Disk', 'IPC', 'Printer']
+        smbclient_types = ['Disk', 'IPC$', 'Printer']
         cmd = "smbclient -L %s -U %s%%%s -t 2" % (target, self.username, self.password)
         for line in getoutput(cmd).splitlines():
+            if count == 0:
+                print "         %-26s %s" % ("Shares", "Comments")
+                print "   ", "-" * 43
+            count += 1
             for t in smbclient_types:
                 if t in line:
                     try:
-                        if count == 0:
-                            print "         %-26s %s" % ("Shares", "Comments")
-                            print "   ", "-"*43
-                        if "IPC" == t:
-                            print "    \\\%s\%-15s %s" % (target, "IPC$", comment)
+                        if 'IPC$' in line:
+                            print "    \\\%s\%s" % (target, "IPC$")
                             acquired_shares.append("IPC$")
                         else:
                             share = line.split(t)[0].strip()
                             comment = line.split(t)[1].strip()
                             print "    \\\%s\%-15s %s" % (target, share, comment)
                             acquired_shares.append(share)
-                        count += 1
                     except KeyboardInterrupt:
                         print "\n[!] Key Event Detected...\n\n"
                         sys.exit(0)
@@ -243,7 +243,7 @@ class nullinux():
         self.print_status("Enumerating: \\\%s\%s" % (target, share))
         cmd = "smbclient //%s/%s -t 3 -U %s%%%s -c dir" % (target, share, self.username, self.password)
         for line in getoutput(cmd).splitlines():
-            if "NT_STATUS_LOGON_FAILURE" in line or "NT_STATUS_ACCESS_DENIED" in line:
+            if "NT_STATUS_LOGON_FAILURE" in line or "_ACCESS_DENIED" in line:
                 print "   ",
                 self.print_failure("Access Denied")
             elif "NT_STATUS_UNSUCCESSFUL" in line:
