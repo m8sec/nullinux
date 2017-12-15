@@ -14,16 +14,15 @@ nullinux is an internal penetration testing tool for Linux that can be used to e
 ### Usage
     Scanning:
         -shares             Dynamically Enumerate all possible
-                            shares. (formally: --enumshares)
+                            shares.
 
         -users              Enumerate users through a variety of
-                            techniques. (formally: --enumusers)
+                            techniques.
 
         -quick              Quickly enumerate users, leaving out brute
                             force options. (used with: -users, or -all)
 
         -all                Enumerate both users and shares
-                            (formally: --all)
 
     Host:
         -U                  Set username (optional)
