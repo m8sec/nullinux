@@ -413,16 +413,15 @@ def banner():
 
 Scanning:
     -shares             Dynamically Enumerate all possible
-                        shares. (formally: --enumshares)
+                        shares.
 
     -users              Enumerate users through a variety of
-                        techniques. (formally: --enumusers)
+                        techniques.
 
     -quick              Quickly enumerate users, leaving out brute
                         force options. (used with: -users, or -all)
 
     -all                Enumerate both users and shares
-                        (formally: --all)
 
 Host:
     -U                  Set username (optional)
@@ -433,7 +432,6 @@ More Options:
     -v                  Verbose Output
 
     -h                  Help menu
-
 
 Example Usage:
     python nullinux.py -users -quick DC1.Domain.net
