@@ -80,19 +80,10 @@ class nullinux():
                 self.password = "\'%s\'" % (sys.argv[sys.argv.index("-P") + 1])
             if "-U" in sys.argv:
                 self.username = "\'%s\'" % (sys.argv[sys.argv.index("-U") + 1])
-
-            if "--enumshares" in sys.argv:
-                print "\033[1;31m[-]\033[1;m Depreciating option, please use \"-shares\""
+            if "-shares" in sys.argv:
                 self.shares = True
-            elif "-shares" in sys.argv:
-                self.shares = True
-
-            if "--enumusers" in sys.argv:
-                print "\033[1;31m[-]\033[1;m Depreciating option, please use \"-users\""
+            if "-users" in sys.argv:
                 self.users = True
-            elif "-users" in sys.argv:
-                self.users = True
-
             if "--all" in sys.argv:
                 print "\033[1;31m[-]\033[1;m Depreciating option, please use \"-users\""
                 self.shares = True
@@ -100,7 +91,6 @@ class nullinux():
             elif "-all" in sys.argv:
                 self.shares = True
                 self.users = True
-
             if "-quick" in sys.argv:
                 self.quick = True
         except:
@@ -241,7 +231,7 @@ class nullinux():
     def enum_dir(self, target, share):
         print "\n   ",
         self.print_status("Enumerating: \\\%s\%s" % (target, share))
-        cmd = "smbclient //%s/%s -t 3 -U %s%%%s -c dir" % (target, share, self.username, self.password)
+        cmd = "smbclient //%s/\'%s\' -t 3 -U %s%%%s -c dir" % (target, share, self.username, self.password)
         for line in getoutput(cmd).splitlines():
             if "NT_STATUS_LOGON_FAILURE" in line or "_ACCESS_DENIED" in line:
                 print "   ",
