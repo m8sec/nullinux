@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+# Author: m8r0wn
+# Script: setup.sh
+# Category: Setup
+
+# Description:
+# nullinux setup script to verify all required packages
+# are installed on the system.
+
 #Check if Script run as root
 if [[ $(id -u) != 0 ]]; then
 	echo -e "\n[!] Setup script needs to run as root\n\n"
