@@ -15,7 +15,6 @@ if [[ $(id -u) != 0 ]]; then
 fi
 
 echo -e "\n[*] Starting nullinux setup script"
-
 echo -e "[*] Checking for Python 2.7"
 if [[ $(python2.7 -V 2>&1) == *"not found"* ]]
 then
