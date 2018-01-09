@@ -2,7 +2,6 @@
 
 # Author: m8r0wn
 # Script: setup.sh
-# Category: Setup
 
 # Description:
 # nullinux setup script to verify all required packages

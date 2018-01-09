@@ -2,7 +2,6 @@
 
 # Author: m8r0wn
 # Script: nullinux.py
-# Category: VulnID
 
 # Description:
 # SMB null session enumeration tool
