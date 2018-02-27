@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-
 # Author: m8r0wn
-# Script: setup.sh
 
 # Description:
 # nullinux setup script to verify all required packages
