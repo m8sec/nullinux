@@ -260,7 +260,7 @@ def list_targets(t):
                 return [ip.strip() for ip in open(t)]
             else:
                 raise Exception("001: host file not found")
-        #multiple 127.0.0.1,yahoo.com
+        #multiple 10.0.0.1,10.0.0.2
         elif "," in t:
             for x in t.split(","):
                 hosts.append(x)
