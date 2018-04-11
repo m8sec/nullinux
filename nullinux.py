@@ -268,7 +268,7 @@ def list_targets(t):
         elif iprange.match(t):
             a,b = t.split("-")
             c = a.split(".")
-            for x in range(int(c[2]), int(b)+1):
+            for x in range(int(c[3]), int(b)+1):
                 hosts.append(c[0]+"."+c[1]+"."+c[2]+"."+str(x))
         # dns name
         elif dns.match(t):
