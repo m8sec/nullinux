@@ -6,14 +6,15 @@
 # Python2/3 compatibility
 from __future__ import print_function
 import sys
-if sys.version_info[0] < 3:
-    from commands import getoutput
-else:
-    from subprocess import getoutput
 import re
 import argparse
 import datetime
 from os import path
+
+if sys.version_info[0] < 3:
+    from commands import getoutput
+else:
+    from subprocess import getoutput
 
 class nullinux():
     shares          = False
