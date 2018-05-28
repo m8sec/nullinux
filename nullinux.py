@@ -1,12 +1,19 @@
-#! /usr/bin/env python2.7
-# Copyright (c) 2018 m8r0wn
+#!/usr/bin/env python3
 
+# Author: m8r0wn
+# License: GPL-3.0
+
+# Python2/3 compatibility
+from __future__ import print_function
 import sys
+if sys.version_info[0] < 3:
+    from commands import getoutput
+else:
+    from subprocess import getoutput
 import re
-from os import path
-import datetime
-from commands import getoutput
 import argparse
+import datetime
+from os import path
 
 class nullinux():
     shares          = False
@@ -78,7 +85,8 @@ class nullinux():
                         sys.exit(0)
                     except:
                         pass
-        if acquired_shares:             #Enumerate dir of each new share
+        if acquired_shares:
+            #Enumerate dir of each new share
             for s in acquired_shares:
                 self.enum_dir(target, s)
         else:
@@ -86,7 +94,7 @@ class nullinux():
             print_failure("No Shares Detected")
 
     def share_header(self, target, share):
-        print "\n   ",
+        print("\n   ", end='')
         print_status("Enumerating: \\\%s\%s" % (target, share))
 
     def enum_dir(self, target, share):
@@ -98,7 +106,7 @@ class nullinux():
                     if header_count == 0:
                         header_count += 1
                         self.share_header(target, share)
-                    print"   ",
+                    print("   ", end='')
                     print_failure(line)
             elif "Domain=" in line or "blocks available" in line or "WARNING" in line or "failed:" in line or not line:
                 pass
@@ -296,30 +304,10 @@ def print_failure(msg):
 def time_stamp():
     return datetime.datetime.now().strftime('%m-%d-%Y %H:%M')
 
-def main():
-    version = 5.0
-    args = argparse.ArgumentParser(description=("""
-               nullinux | {0}
-    -----------------------------------
-     SMB Null Session Enumeration Tool
-
-usage:
-    python nullinux.py -users -quick DC1.Domain.net
-    python nullinux.py -all 192.168.0.0-5
-    python nullinux.py -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1,10.0.0.5""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
-
-    args.add_argument('-U', dest='username', type=str,default="", help='Username')
-    args.add_argument('-P', dest='password', type=str, default="", help='Password')
-    args.add_argument('-v', dest="verbose", action='store_true', help="Verbose output")
-    args.add_argument('-shares', dest="shares", action='store_true', help="Enumerate shares")
-    args.add_argument('-users', dest="users", action='store_true', help="Enumerate users")
-    args.add_argument('-all', dest="all", action='store_true', help="Enumerate shares & users")
-    args.add_argument('-quick', dest="quick", action='store_true', help="Fast user enumeration (use with -users or -all)")
-    args.add_argument(dest='targets', nargs='+', help='Target server')
-    args = args.parse_args()
+def main(args, targets):
     try:
-        print("\n    Starting nullinux {} | {}\n\n".format(version, time_stamp()))
-        for t in list_targets(args.targets[0]):
+        print("\n    Starting nullinux v.{} | {}\n\n".format(version, time_stamp()))
+        for t in targets:
             #enum os
             scan = nullinux('\"{}\"'.format(args.username), '\"{}\"'.format(args.password), args.verbose)
             scan.enum_os(t)
@@ -345,12 +333,34 @@ usage:
                     scan.create_userfile()
                 else:
                     print("\n\033[1;31m[-]\033[1;m No valid users or groups detected\n")
-
-    except KeyboardInterrupt:
-        print("\n[!] Key Event Detected...\n\n")
-        sys.exit(0)
     except Exception as e:
         print("\n[*] Main Error: {}\n\n".format(e))
 
 if __name__ == '__main__':
-    main()
+    try:
+        # Start argparse
+        version = 5.1
+        args = argparse.ArgumentParser(description=("""
+               nullinux | v.{0}
+    -----------------------------------
+SMB null-session enumeration tool to gather OS,
+user, share, and domain information.
+
+usage:
+    python3 nullinux.py -users -quick DC1.Domain.net
+    python3 nullinux.py -all 192.168.0.0-5
+    python3 nullinux.py -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1,10.0.0.5""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
+        args.add_argument('-u', '-U', dest='username', type=str, default="", help='Username')
+        args.add_argument('-p', '-P', dest='password', type=str, default="", help='Password')
+        args.add_argument('-v', dest="verbose", action='store_true', help="Verbose output")
+        args.add_argument('-shares', dest="shares", action='store_true', help="Enumerate shares")
+        args.add_argument('-users', dest="users", action='store_true', help="Enumerate users")
+        args.add_argument('-a', '-all', dest="all", action='store_true', help="Enumerate shares & users")
+        args.add_argument('-q', '-quick', dest="quick", action='store_true', help="Fast user enumeration (use with -users or -all)")
+        args.add_argument(dest='targets', nargs='+', help='Target server')
+        args = args.parse_args()
+        #Start Main
+        main(args, list_targets(args.targets[0]))
+    except KeyboardInterrupt:
+        print("\n[!] Key Event Detected...\n\n")
+        sys.exit(0)
