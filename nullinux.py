@@ -17,18 +17,15 @@ else:
     from subprocess import getoutput
 
 class nullinux():
-    shares          = False
-    users           = False
-    quick           = False
     known_users     = ['Administrator', 'Guest', 'krbtgt', 'root', 'bin']
     domain_sid      = ""
     acquired_users  = []
-    group_count     = 0
 
     def __init__(self, username, password, verbose):
-        self.username = username
-        self.password = password
-        self.verbose = verbose
+        self.group_count    = 0
+        self.username       = username
+        self.password       = password
+        self.verbose        = verbose
 
     def enum_os(self, target):
         cmd = "smbclient //{}/IPC$ -U {}%{} -t 1 -c exit".format(target,self.username, self.password)
@@ -176,12 +173,18 @@ class nullinux():
             except:
                 pass
 
-    def enum_RIDcycle(self, target):
+    def enum_RIDcycle(self, target, ridrange):
         print("\n\033[1;34m[*]\033[1;m Performing RID Cycling for: {}".format(target))
         if not self.domain_sid:
             print_failure("RID Failed: Could not attain Domain SID")
             return False
-        rid_range = list(range(500, 530))
+        # Handle custom RID range input
+        try:
+            r = ridrange.split("-")
+            rid_range = list(range(int(r[0]), int(r[1])+1))
+        except:
+            print_failure("Error parsing custom RID range, reverting to default")
+            rid_range = list(range(500, 531))
         for rid in rid_range:
             try:
                 cmd = "rpcclient -c \"lookupsids {}-{}\" -U {}%{} {}".format(self.domain_sid, rid, self.username, self.password, target)
@@ -324,7 +327,7 @@ def main(args, targets):
                 #bypass on quick option
                 if not args.quick:
                     scan.enum_lsa(t)
-                    scan.enum_RIDcycle(t)
+                    scan.enum_RIDcycle(t, args.rid_range)
                     scan.enum_known_users(t)
                 scan.enum_dom_groups(t)
                 #if users, write to file, close
@@ -340,16 +343,16 @@ def main(args, targets):
 if __name__ == '__main__':
     try:
         # Start argparse
-        version = 5.1
+        version = '5.2'
         args = argparse.ArgumentParser(description=("""
-               nullinux | v.{0}
+               nullinux | v{0}
     -----------------------------------
 SMB null-session enumeration tool to gather OS,
 user, share, and domain information.
 
 usage:
     python3 nullinux.py -users -quick DC1.Domain.net
-    python3 nullinux.py -all 192.168.0.0-5
+    python3 nullinux.py -all -r 500-600 192.168.0.0-5
     python3 nullinux.py -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1,10.0.0.5""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
         args.add_argument('-u', '-U', dest='username', type=str, default="", help='Username')
         args.add_argument('-p', '-P', dest='password', type=str, default="", help='Password')
@@ -358,6 +361,7 @@ usage:
         args.add_argument('-users', dest="users", action='store_true', help="Enumerate users")
         args.add_argument('-a', '-all', dest="all", action='store_true', help="Enumerate shares & users")
         args.add_argument('-q', '-quick', dest="quick", action='store_true', help="Fast user enumeration (use with -users or -all)")
+        args.add_argument('-r', dest='rid_range', type=str, default="500-530", help='Set Custom RID cycling range')
         args.add_argument(dest='targets', nargs='+', help='Target server')
         args = args.parse_args()
         #Start Main
