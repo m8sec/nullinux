@@ -5,11 +5,13 @@
 
 # Python2/3 compatibility
 from __future__ import print_function
-import sys
 import re
+import sys
 import argparse
 import datetime
 from os import path
+from time import sleep
+from threading import Thread, activeCount
 
 if sys.version_info[0] < 3:
     from commands import getoutput
@@ -187,28 +189,37 @@ class nullinux():
             rid_range = list(range(500, 531))
         for rid in rid_range:
             try:
-                cmd = "rpcclient -c \"lookupsids {}-{}\" -U {}%{} {}".format(self.domain_sid, rid, self.username, self.password, target)
-                for line in getoutput(cmd).splitlines():
-                    if "S-1-5-21" in line:
-                        user_account = line.split("\\")[1].split("(")[0].strip()
-                        count = int(line.split("(")[1].split(")")[0].strip())
-                        if count == 1:
-                            if self.verbose:
-                                print("    " + line)
-                            else:
-                                print("    " + user_account)
-                            if user_account not in self.acquired_users:
-                                self.acquired_users.append(user_account)
-                        elif count > 1 and "*unknown*\*unknown*" not in line:
-                            if self.verbose:
-                                print("    {:35} (Network/LocalGroup)".format(line))
-                            else:
-                                print("    {:35} (Network/LocalGroup)".format(user_account))
+                Thread(target=self.rid_thread, args=(rid,target,), daemon=True).start()
+                while activeCount() > 4:
+                    sleep(0.001)
             except KeyboardInterrupt:
                 print("\n[!] Key Event Detected...\n\n")
                 sys.exit(0)
             except:
                 pass
+            # Exit all threads before returning
+            while activeCount() > 1:
+                sleep(0.001)
+
+    def rid_thread(self, rid, target):
+        cmd = "rpcclient -c \"lookupsids {}-{}\" -U {}%{} {}".format(self.domain_sid, rid, self.username, self.password,target)
+        for line in getoutput(cmd).splitlines():
+            if "S-1-5-21" in line:
+                # Split output to get username/group name
+                user_account = line.split("\\")[1].split("(")[0].strip()
+                count = int(line.split("(")[1].split(")")[0].strip())
+                if count == 1:
+                    if self.verbose:
+                        print("    " + line)
+                    else:
+                        print("    " + user_account)
+                    if user_account not in self.acquired_users:
+                        self.acquired_users.append(user_account)
+                elif count > 1 and "*unknown*\*unknown*" not in line:
+                    if self.verbose:
+                        print("    {:35} (Network/LocalGroup)".format(line))
+                    else:
+                        print("    {:35} (Network/LocalGroup)".format(user_account))
 
     def enum_known_users(self, target):
         print("\n\033[1;34m[*]\033[1;m Testing {} for Known Users".format(target))
@@ -262,9 +273,10 @@ class nullinux():
 
 def list_targets(t):
     hosts = []
-    ip = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-    iprange = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\-\d{1,3}$")
     dns = re.compile("^.+\.[a-z|A-Z]{2,}$")
+    ip = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+    cidr = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/24$")
+    iprange = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\-\d{1,3}$")
     try:
         #txt File
         if t.endswith(".txt"):
@@ -282,6 +294,12 @@ def list_targets(t):
             c = a.split(".")
             for x in range(int(c[3]), int(b)+1):
                 hosts.append(c[0]+"."+c[1]+"."+c[2]+"."+str(x))
+        # Cidr /24
+        elif cidr.match(t):
+            a = t.split("/")[0].split(".")
+            for x in range(0, 256):
+                target = a[0] + "." + a[1] + "." + a[2] + "." + str(x)
+                hosts.append(target)
         # dns name
         elif dns.match(t):
             hosts.append(t)
@@ -308,10 +326,10 @@ def print_failure(msg):
 def time_stamp():
     return datetime.datetime.now().strftime('%m-%d-%Y %H:%M')
 
-def main(args, targets):
+def main(args):
     try:
-        print("\n    Starting nullinux v.{} | {}\n\n".format(version, time_stamp()))
-        for t in targets:
+        print("\n    Starting nullinux v{} | {}\n\n".format(version, time_stamp()))
+        for t in args.target:
             #enum os
             scan = nullinux('\"{}\"'.format(args.username), '\"{}\"'.format(args.password), args.verbose)
             scan.enum_os(t)
@@ -343,7 +361,7 @@ def main(args, targets):
 if __name__ == '__main__':
     try:
         # Start argparse
-        version = '5.2'
+        version = '5.3.0'
         args = argparse.ArgumentParser(description=("""
                nullinux | v{0}
     -----------------------------------
@@ -362,10 +380,11 @@ usage:
         args.add_argument('-a', '-all', dest="all", action='store_true', help="Enumerate shares & users")
         args.add_argument('-q', '-quick', dest="quick", action='store_true', help="Fast user enumeration (use with -users or -all)")
         args.add_argument('-r', dest='rid_range', type=str, default="500-530", help='Set Custom RID cycling range')
-        args.add_argument(dest='targets', nargs='+', help='Target server')
+        args.add_argument(dest='target', nargs='+', help='Target server')
         args = args.parse_args()
+        args.target = list_targets(args.target[0])
         #Start Main
-        main(args, list_targets(args.targets[0]))
+        main(args)
     except KeyboardInterrupt:
         print("\n[!] Key Event Detected...\n\n")
         sys.exit(0)
