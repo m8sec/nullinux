@@ -29,4 +29,5 @@ In the Linux terminal run:
       -users                    Enumerate users
       -a, -all                  Enumerate shares & users
       -q, -quick                Fast user enumeration (use with -users or -all)
-      -r RID_RANGE              Set Custom RID cycling range
+      -r RID_RANGE              Set Custom RID cycling range (Default: 500-530)
+      -t MAX_THREADS            Max threads for RID cycling (Default: 5)
