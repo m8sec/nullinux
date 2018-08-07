@@ -175,7 +175,7 @@ class nullinux():
             except:
                 pass
 
-    def enum_RIDcycle(self, target, ridrange):
+    def rid_cycling(self, target, ridrange, max_threads):
         print("\n\033[1;34m[*]\033[1;m Performing RID Cycling for: {}".format(target))
         if not self.domain_sid:
             print_failure("RID Failed: Could not attain Domain SID")
@@ -190,18 +190,16 @@ class nullinux():
         for rid in rid_range:
             try:
                 Thread(target=self.rid_thread, args=(rid,target,), daemon=True).start()
-                while activeCount() > 4:
-                    sleep(0.001)
-            except KeyboardInterrupt:
-                print("\n[!] Key Event Detected...\n\n")
-                sys.exit(0)
             except:
                 pass
-            # Exit all threads before returning
-            while activeCount() > 1:
+            while activeCount() > max_threads:
                 sleep(0.001)
+        # Exit all threads before returning
+        while activeCount() > 1:
+            sleep(0.001)
 
     def rid_thread(self, rid, target):
+        print(rid)
         cmd = "rpcclient -c \"lookupsids {}-{}\" -U {}%{} {}".format(self.domain_sid, rid, self.username, self.password,target)
         for line in getoutput(cmd).splitlines():
             if "S-1-5-21" in line:
@@ -345,7 +343,7 @@ def main(args):
                 #bypass on quick option
                 if not args.quick:
                     scan.enum_lsa(t)
-                    scan.enum_RIDcycle(t, args.rid_range)
+                    scan.rid_cycling(t, args.rid_range, args.max_threads)
                     scan.enum_known_users(t)
                 scan.enum_dom_groups(t)
                 #if users, write to file, close
@@ -361,7 +359,7 @@ def main(args):
 if __name__ == '__main__':
     try:
         # Start argparse
-        version = '5.3.0'
+        version = '5.3.1'
         args = argparse.ArgumentParser(description=("""
                nullinux | v{0}
     -----------------------------------
@@ -379,7 +377,8 @@ usage:
         args.add_argument('-users', dest="users", action='store_true', help="Enumerate users")
         args.add_argument('-a', '-all', dest="all", action='store_true', help="Enumerate shares & users")
         args.add_argument('-q', '-quick', dest="quick", action='store_true', help="Fast user enumeration (use with -users or -all)")
-        args.add_argument('-r', dest='rid_range', type=str, default="500-530", help='Set Custom RID cycling range')
+        args.add_argument('-r', dest='rid_range', type=str, default="500-530", help='Set Custom RID cycling range (Default: 500-530)')
+        args.add_argument('-t', dest='max_threads', type=int, default=5, help='Max threads for RID cycling (Default: 5)')
         args.add_argument(dest='target', nargs='+', help='Target server')
         args = args.parse_args()
         args.target = list_targets(args.target[0])
