@@ -6,16 +6,19 @@ For more information visit the [wiki page](https://github.com/m8r0wn/nullinux/wi
 
 ### Getting Started
 In the Linux terminal run:
-1. git clone https://github.com/m8r0wn/nullinux
-2. sudo chmod +x nullinux/setup.sh
-3. sudo ./nullinux/setup.sh
+```
+git clone https://github.com/m8r0wn/nullinux
+cd nullinux
+sudo chmod +x setup.sh
+sudo ./setup.sh
+```
 
 ### Usage
 
     usage:
-        python3 nullinux.py -users -quick DC1.Domain.net
-        python3 nullinux.py -all 192.168.0.0-5
-        python3 nullinux.py -shares -U 'Domain\User' -P 'Password1' 10.0.0.1,10.0.0.5
+        nullinux -users -quick DC1.Domain.net
+        nullinux -all 192.168.0.0-5
+        nullinux -shares -U 'Domain\User' -P 'Password1' 10.0.0.1,10.0.0.5
 
     positional arguments:
       targets                   Target server

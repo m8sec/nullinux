@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Author: m8r0wn
 
-# Description:
-# nullinux setup script to verify all required packages
+# Author: m8r0wn
+# Description: nullinux setup script to verify all required packages
 # are installed on the system.
 
 #Check if Script run as root
@@ -29,5 +28,10 @@ then
 else
     echo "[+] smbclient installed"
 fi
+
+# Copy the file
+cp ./nullinux.py /usr/local/bin/nullinux
+# Make the file executable
+chmod +x /usr/local/bin/nullinux
 
 echo -e "\n[*] nullinux setup complete\n\n"
