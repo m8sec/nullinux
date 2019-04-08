@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
-# Author: m8r0wn
+# Author: @m8r0wn
 # License: GPL-3.0
 
-# Python2/3 compatibility
+# Python2/3 compatibility for print(''.end='')
 from __future__ import print_function
-import re
 import sys
 import argparse
 import datetime
-from os import path
 from time import sleep
+from ipparser import ipparser
 from threading import Thread, activeCount
 
 if sys.version_info[0] < 3:
@@ -269,49 +268,6 @@ class nullinux():
             except:
                 pass
 
-def list_targets(t):
-    hosts = []
-    dns = re.compile("^.+\.[a-z|A-Z]{2,}$")
-    ip = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-    cidr = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/24$")
-    iprange = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\-\d{1,3}$")
-    try:
-        #txt File
-        if t.endswith(".txt"):
-            if path.exists(t):
-                return [ip.strip() for ip in open(t)]
-            else:
-                raise Exception("001: host file not found")
-        #multiple 10.0.0.1,10.0.0.2
-        elif "," in t:
-            for x in t.split(","):
-                hosts.append(x)
-        #Range 127.0.0.1-50
-        elif iprange.match(t):
-            a,b = t.split("-")
-            c = a.split(".")
-            for x in range(int(c[3]), int(b)+1):
-                hosts.append(c[0]+"."+c[1]+"."+c[2]+"."+str(x))
-        # Cidr /24
-        elif cidr.match(t):
-            a = t.split("/")[0].split(".")
-            for x in range(0, 256):
-                target = a[0] + "." + a[1] + "." + a[2] + "." + str(x)
-                hosts.append(target)
-        # dns name
-        elif dns.match(t):
-            hosts.append(t)
-        #Single IP match
-        elif ip.match(t):
-            hosts.append(t)
-        #no match
-        else:
-            raise Exception("002: invalid target provided")
-        return hosts
-    except Exception as e:
-        print("[!] List_Target Error " + str(e))
-        exit(1)
-
 def print_success(msg):
     print('\033[1;32m[+] \033[1;m'+msg)
 
@@ -358,8 +314,7 @@ def main(args):
 
 if __name__ == '__main__':
     try:
-        # Start argparse
-        version = '5.3.1'
+        version = '5.3.2'
         args = argparse.ArgumentParser(description=("""
                nullinux | v{0}
     -----------------------------------
@@ -381,7 +336,8 @@ usage:
         args.add_argument('-t', dest='max_threads', type=int, default=5, help='Max threads for RID cycling (Default: 5)')
         args.add_argument(dest='target', nargs='+', help='Target server')
         args = args.parse_args()
-        args.target = list_targets(args.target[0])
+
+        args.target = ipparser(args.target[0])
         #Start Main
         main(args)
     except KeyboardInterrupt:
