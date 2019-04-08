@@ -3,7 +3,7 @@
 # Author: @m8r0wn
 # License: GPL-3.0
 
-# Python2/3 compatibility for print(''.end='')
+# Python2/3 compatibility for print('', end='')
 from __future__ import print_function
 import sys
 import argparse
