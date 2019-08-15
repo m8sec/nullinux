@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-
-# Author: @m8r0wn
-# Description: nullinux install script
+# nullinux install script
 
 if [[ $(id -u) != 0 ]]; then
 	echo -e "\n[!] Setup script needs to run as root\n\n"

@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-
-# Author: @m8r0wn
-# License: GPL-3.0
-
-# Python2/3 compatibility for print('', end='')
 from __future__ import print_function
 import sys
 import argparse
@@ -23,7 +18,6 @@ class nullinux():
     acquired_users  = []
 
     def __init__(self, username, password, verbose):
-        self.group_count    = 0
         self.username       = username
         self.password       = password
         self.verbose        = verbose
@@ -32,9 +26,12 @@ class nullinux():
         cmd = "smbclient //{}/IPC$ -U {}%{} -t 1 -c exit".format(target,self.username, self.password)
         for line in getoutput(cmd).splitlines():
             if "Domain=" in line:
+                # OS info is no longer enumerated in newer Windows servers
                 print_success("{}: {}".format(target, line))
             elif "NT_STATUS_LOGON_FAILURE" in line:
                 print_failure("{}: Authentication Failed".format(target))
+                return False
+            return True
 
     def get_dom_sid(self, target):
         print("\n\033[1;34m[*]\033[1;m Enumerating Domain Information for: {}".format(target))
@@ -49,12 +46,9 @@ class nullinux():
             print_failure("Could not attain Domain SID")
 
     def create_userfile(self):
-        openfile = open('nullinux_users.txt', 'w')
+        openfile = open('nullinux_users.txt', 'a')
         for user in self.acquired_users:
-            if user == self.acquired_users[0]:
-                openfile.write(user)
-            else:
-                openfile.write('\n{}'.format(user))
+             openfile.write('{}\n'.format(user))
         openfile.close()
 
     def enum_shares(self, target):
@@ -185,7 +179,7 @@ class nullinux():
             rid_range = list(range(int(r[0]), int(r[1])+1))
         except:
             print_failure("Error parsing custom RID range, reverting to default")
-            rid_range = list(range(500, 531))
+            rid_range = list(range(500, 551))
         for rid in rid_range:
             try:
                 Thread(target=self.rid_thread, args=(rid,target,), daemon=True).start()
@@ -193,12 +187,10 @@ class nullinux():
                 pass
             while activeCount() > max_threads:
                 sleep(0.001)
-        # Exit all threads before returning
         while activeCount() > 1:
             sleep(0.001)
 
     def rid_thread(self, rid, target):
-        print(rid)
         cmd = "rpcclient -c \"lookupsids {}-{}\" -U {}%{} {}".format(self.domain_sid, rid, self.username, self.password,target)
         for line in getoutput(cmd).splitlines():
             if "S-1-5-21" in line:
@@ -246,7 +238,6 @@ class nullinux():
                 try:
                     group = line.split("[")[1].split("]")[0].strip()
                     print_success("Group: %s" % (group))
-                    self.group_count += 1
                     self.enum_group_mem(target, group)
                 except KeyboardInterrupt:
                     print("\n[!] Key Event Detected...\n\n")
@@ -269,52 +260,53 @@ class nullinux():
                 pass
 
 def print_success(msg):
-    print('\033[1;32m[+] \033[1;m'+msg)
+    print('\033[1;32m[+]\033[0m {}'.format(msg))
 
 def print_status(msg):
-    print('\033[1;34m[*] \033[1;m'+msg)
+    print('\033[1;34m[*]\033[0m {}'.format(msg))
 
 def print_failure(msg):
-    print('\033[1;31m[-] \033[1;m'+msg)
+    print('\033[1;31m[-]\033[0m {}'.format(msg))
 
 def time_stamp():
     return datetime.datetime.now().strftime('%m-%d-%Y %H:%M')
 
+def nullinux_enum(args, scan, target):
+    scan.enum_os(target)
+    if args.shares or args.all:
+        scan.enum_shares(target)
+    if args.users or args.all:
+        if not scan.domain_sid:
+            scan.get_dom_sid(target)
+        scan.enum_querydispinfo(target)
+        scan.enum_enumdomusers(target)
+        if not args.quick:
+            scan.enum_lsa(target)
+            scan.rid_cycling(target, args.rid_range, args.max_threads)
+            scan.enum_known_users(target)
+        scan.enum_dom_groups(target)
+
 def main(args):
-    try:
-        print("\n    Starting nullinux v{} | {}\n\n".format(version, time_stamp()))
-        for t in args.target:
-            #enum os
-            scan = nullinux('\"{}\"'.format(args.username), '\"{}\"'.format(args.password), args.verbose)
-            scan.enum_os(t)
-            #enum shares
-            if args.shares or args.all:
-                scan.enum_shares(t)
-            #enum users
-            if args.users or args.all:
-                if not scan.domain_sid:
-                    scan.get_dom_sid(t)
-                scan.enum_querydispinfo(t)
-                scan.enum_enumdomusers(t)
-                #bypass on quick option
-                if not args.quick:
-                    scan.enum_lsa(t)
-                    scan.rid_cycling(t, args.rid_range, args.max_threads)
-                    scan.enum_known_users(t)
-                scan.enum_dom_groups(t)
-                #if users, write to file, close
-                if scan.acquired_users:
-                    print("\n\033[1;32m[+]\033[1;m {} USER(s) identified in {} GROUP(s)".format(len(scan.acquired_users), scan.group_count))
-                    print("\033[1;34m[*]\033[1;m Writing users to file: ./nullinux_users.txt\n")
-                    scan.create_userfile()
-                else:
-                    print("\n\033[1;31m[-]\033[1;m No valid users or groups detected\n")
-    except Exception as e:
-        print("\n[*] Main Error: {}\n\n".format(e))
+    print("\n    Starting nullinux v{} | {}\n\n".format(version, time_stamp()))
+    scan = nullinux('\"{}\"'.format(args.username), '\"{}\"'.format(args.password), args.verbose)
+    for t in args.target:
+        try:
+            if args.rid_only:
+                scan.get_dom_sid(t)
+                scan.rid_cycling(t, args.rid_range, args.max_threads)
+            else:
+                nullinux_enum(args, scan, t)
+        except Exception as e:
+            print("\n[*] Main Error: {}\n\n".format(e))
+
+    print("\n\033[1;34m[*]\033[1;m {} unique user(s) identified".format(len(scan.acquired_users)))
+    if scan.acquired_users:
+        print("\033[1;32m[+]\033[1;m Writing users to file: ./nullinux_users.txt\n")
+        scan.create_userfile()
 
 if __name__ == '__main__':
     try:
-        version = '5.3.2'
+        version = '5.4.0'
         args = argparse.ArgumentParser(description=("""
                nullinux | v{0}
     -----------------------------------
@@ -322,23 +314,28 @@ SMB null-session enumeration tool to gather OS,
 user, share, and domain information.
 
 usage:
-    python3 nullinux.py -users -quick DC1.Domain.net
-    python3 nullinux.py -all -r 500-600 192.168.0.0-5
-    python3 nullinux.py -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1,10.0.0.5""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
-        args.add_argument('-u', '-U', dest='username', type=str, default="", help='Username')
-        args.add_argument('-p', '-P', dest='password', type=str, default="", help='Password')
+    nullinux -users -quick DC1.Domain.net,10.0.1.1
+    nullinux -rid -range 500-600 10.0.0.1
+    nullinux -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
         args.add_argument('-v', dest="verbose", action='store_true', help="Verbose output")
-        args.add_argument('-shares', dest="shares", action='store_true', help="Enumerate shares")
-        args.add_argument('-users', dest="users", action='store_true', help="Enumerate users")
-        args.add_argument('-a', '-all', dest="all", action='store_true', help="Enumerate shares & users")
-        args.add_argument('-q', '-quick', dest="quick", action='store_true', help="Fast user enumeration (use with -users or -all)")
-        args.add_argument('-r', dest='rid_range', type=str, default="500-530", help='Set Custom RID cycling range (Default: 500-530)')
-        args.add_argument('-t', dest='max_threads', type=int, default=5, help='Max threads for RID cycling (Default: 5)')
+
+        auth = args.add_argument_group("Authentication")
+        auth.add_argument('-u', '-U', dest='username', type=str, default="", help='Username')
+        auth.add_argument('-p', '-P', dest='password', type=str, default="", help='Password')
+
+        enum = args.add_argument_group("Enumeration")
+        enum.add_argument('-shares', dest="shares", action='store_true', help="Enumerate shares only")
+        enum.add_argument('-users', dest="users", action='store_true', help="Enumerate users only")
+        enum.add_argument('-a', '-all', dest="all", action='store_false', help=argparse.SUPPRESS)
+        enum.add_argument('-q', '-quick', dest="quick", action='store_true', help="Fast user enumeration")
+        enum.add_argument('-r', '-rid', dest="rid_only", action='store_true', help="Perform RID cycling only")
+        enum.add_argument('-range', dest='rid_range', type=str, default="500-550", help='Set Custom RID cycling range (Default: \'500-550\')')
+        enum.add_argument('-T', dest='max_threads', type=int, default=15, help='Max threads for RID cycling (Default: 15)')
+
         args.add_argument(dest='target', nargs='+', help='Target server')
         args = args.parse_args()
-
         args.target = ipparser(args.target[0])
-        #Start Main
+
         main(args)
     except KeyboardInterrupt:
         print("\n[!] Key Event Detected...\n\n")

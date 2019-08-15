@@ -1,16 +1,23 @@
 # nullinux
 
-nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, domain information, shares, directories, and users through SMB. If no username and password are provided in the command line arguments, nullinux will attempt to connect to the target using an SMB null session. Unlike many of the enumeration tools out there already, nullinux can enumerate multiple targets at once and, when finished, creates a nullinux_users.txt file of all accounts found on the host(s). This user file is free of duplicates and formatted for direct implementation and further exploitation. _nullinux is Python 2/3 compatible. However, the setup.sh script is designed for Python3 usage._
+Nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, domain information, shares, directories, and users through SMB. If no username and password are provided in the command line arguments, an anonymous login, or null session, is attempted. Nullinux acts as a wrapper around the Samba tools smbclient & rpclient to enumerate hosts using a variety of techniques.
 
-For more information visit the [wiki page](https://github.com/m8r0wn/nullinux/wiki) or see [nullinux in action](https://m8r0wn.com/posts/nullinux-in-action.html)!
+Key Features:
+* Single or multi-host enumeration
+* Enumerate shares and list files in root directory
+* Enumerate users & groups
+* Multi-threaded RID Cycling
+* Creates a formatted nullinux_users.txt output file free of duplicates for further exploitation
+* Python 2.7 & 3 compatible
+
+For more information, and example output, visit the [wiki page](https://github.com/m8r0wn/nullinux/wiki).
 
 ### Getting Started
 In the Linux terminal run:
 ```
 git clone https://github.com/m8r0wn/nullinux
 cd nullinux
-sudo chmod +x setup.sh
-sudo ./setup.sh
+sudo bash setup.sh
 ```
 
 ### Usage
