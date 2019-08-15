@@ -273,9 +273,9 @@ def time_stamp():
 
 def nullinux_enum(args, scan, target):
     scan.enum_os(target)
-    if args.shares or args.all:
+    if args.users:
         scan.enum_shares(target)
-    if args.users or args.all:
+    if args.shares:
         if not scan.domain_sid:
             scan.get_dom_sid(target)
         scan.enum_querydispinfo(target)
@@ -299,14 +299,15 @@ def main(args):
         except Exception as e:
             print("\n[*] Main Error: {}\n\n".format(e))
 
-    print("\n\033[1;34m[*]\033[1;m {} unique user(s) identified".format(len(scan.acquired_users)))
-    if scan.acquired_users:
-        print("\033[1;32m[+]\033[1;m Writing users to file: ./nullinux_users.txt\n")
-        scan.create_userfile()
+    if args.users:
+        print("\n\033[1;34m[*]\033[1;m {} unique user(s) identified".format(len(scan.acquired_users)))
+        if scan.acquired_users:
+            print("\033[1;32m[+]\033[1;m Writing users to file: ./nullinux_users.txt\n")
+            scan.create_userfile()
 
 if __name__ == '__main__':
     try:
-        version = '5.4.0'
+        version = '5.4.1'
         args = argparse.ArgumentParser(description=("""
                nullinux | v{0}
     -----------------------------------
@@ -318,24 +319,19 @@ usage:
     nullinux -rid -range 500-600 10.0.0.1
     nullinux -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
         args.add_argument('-v', dest="verbose", action='store_true', help="Verbose output")
-
         auth = args.add_argument_group("Authentication")
         auth.add_argument('-u', '-U', dest='username', type=str, default="", help='Username')
         auth.add_argument('-p', '-P', dest='password', type=str, default="", help='Password')
-
         enum = args.add_argument_group("Enumeration")
-        enum.add_argument('-shares', dest="shares", action='store_true', help="Enumerate shares only")
-        enum.add_argument('-users', dest="users", action='store_true', help="Enumerate users only")
-        enum.add_argument('-a', '-all', dest="all", action='store_false', help=argparse.SUPPRESS)
+        enum.add_argument('-shares', dest="shares", action='store_false', help="Enumerate shares only")
+        enum.add_argument('-users', dest="users", action='store_false', help="Enumerate users only")
         enum.add_argument('-q', '-quick', dest="quick", action='store_true', help="Fast user enumeration")
         enum.add_argument('-r', '-rid', dest="rid_only", action='store_true', help="Perform RID cycling only")
         enum.add_argument('-range', dest='rid_range', type=str, default="500-550", help='Set Custom RID cycling range (Default: \'500-550\')')
         enum.add_argument('-T', dest='max_threads', type=int, default=15, help='Max threads for RID cycling (Default: 15)')
-
         args.add_argument(dest='target', nargs='+', help='Target server')
         args = args.parse_args()
         args.target = ipparser(args.target[0])
-
         main(args)
     except KeyboardInterrupt:
         print("\n[!] Key Event Detected...\n\n")
