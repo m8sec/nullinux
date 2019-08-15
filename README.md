@@ -21,23 +21,20 @@ sudo bash setup.sh
 ```
 
 ### Usage
-
-    usage:
-        nullinux -users -quick DC1.demo.local
-        nullinux -all 192.168.0.0-5
-        nullinux -shares -U 'Domain\User' -P 'Password1' 10.0.0.1,10.0.0.5
-
-    positional arguments:
-      targets                   Target server
-
-    optional arguments:
-      -h, --help                show this help message and exit
-      -u USERNAME, -U USERNAME  Username
-      -p PASSWORD, -P PASSWORD  Password
-      -v                        Verbose output
-      -shares                   Enumerate shares
-      -users                    Enumerate users
-      -a, -all                  Enumerate shares & users
-      -q, -quick                Fast user enumeration (use with -users or -all)
-      -r RID_RANGE              Set Custom RID cycling range (Default: 500-530)
-      -t MAX_THREADS            Max threads for RID cycling (Default: 5)
+```
+positional arguments:
+  target                Target server
+optional arguments:
+  -h, --help            show this help message and exit
+  -v                    Verbose output
+Authentication:
+  -u USERNAME, -U USERNAME Username
+  -p PASSWORD, -P PASSWORD Password
+Enumeration:
+  -shares               Enumerate shares only
+  -users                Enumerate users only
+  -q, -quick            Fast user enumeration
+  -r, -rid              Perform RID cycling only
+  -range RID_RANGE      Set Custom RID cycling range (Default: '500-550')
+  -T MAX_THREADS        Max threads for RID cycling (Default: 15)
+  ```
