@@ -23,7 +23,7 @@ sudo bash setup.sh
 ### Usage
 
     usage:
-        nullinux -users -quick DC1.Domain.net
+        nullinux -users -quick DC1.demo.local
         nullinux -all 192.168.0.0-5
         nullinux -shares -U 'Domain\User' -P 'Password1' 10.0.0.1,10.0.0.5
 
