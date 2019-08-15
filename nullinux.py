@@ -314,7 +314,7 @@ SMB null-session enumeration tool to gather OS,
 user, share, and domain information.
 
 usage:
-    nullinux -users -quick DC1.Domain.net,10.0.1.1
+    nullinux -users -quick DC1.demo.local,10.0.1.1
     nullinux -rid -range 500-600 10.0.0.1
     nullinux -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
         args.add_argument('-v', dest="verbose", action='store_true', help="Verbose output")
