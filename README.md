@@ -1,6 +1,6 @@
 # nullinux
 
-Nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, domain information, shares, directories, and users through SMB. If no username and password are provided in the command line arguments, an anonymous login, or null session, is attempted. Nullinux acts as a wrapper around the Samba tools smbclient & rpclient to enumerate hosts using a variety of techniques.
+Nullinux is an internal penetration testing tool for Linux that can be used to enumerate OS information, domain information, shares, directories, and users through SMB. If no username and password are provided in the command line arguments, an anonymous login, or null session, is attempted. Nullinux acts as a wrapper around the Samba tools smbclient & rpcclient to enumerate hosts using a variety of techniques.
 
 Key Features:
 * Single or multi-host enumeration
