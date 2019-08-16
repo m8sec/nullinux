@@ -1,5 +1,5 @@
 # nullinux
-![](https://img.shields.io/badge/Python-3.6+-blue.svg)&nbsp;&nbsp;
+![](https://img.shields.io/badge/Python-2.7%20&%203+-blue.svg)&nbsp;&nbsp;
 ![](https://img.shields.io/badge/License-MIT-green.svg)&nbsp;&nbsp;
 [![](https://img.shields.io/badge/Demo-Youtube-red.svg)](https://www.youtube.com/watch?v=YpWCnoGvT4Y)&nbsp;&nbsp;
 
