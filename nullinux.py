@@ -17,10 +17,11 @@ class nullinux():
     domain_sid      = ""
     acquired_users  = []
 
-    def __init__(self, username, password, verbose):
+    def __init__(self, username, password, verbose, output_file):
         self.username       = username
         self.password       = password
         self.verbose        = verbose
+        self.output_file   = output_file
 
     def enum_os(self, target):
         cmd = "smbclient //{}/IPC$ -U {}%{} -t 1 -c exit".format(target,self.username, self.password)
@@ -46,7 +47,7 @@ class nullinux():
             print_failure("Could not attain Domain SID")
 
     def create_userfile(self):
-        openfile = open('nullinux_users.txt', 'a')
+        openfile = open(self.output_file, 'a')
         for user in self.acquired_users:
              openfile.write('{}\n'.format(user))
         openfile.close()
@@ -288,7 +289,7 @@ def nullinux_enum(args, scan, target):
 
 def main(args):
     print("\n    Starting nullinux v{} | {}\n\n".format(version, time_stamp()))
-    scan = nullinux('\"{}\"'.format(args.username), '\"{}\"'.format(args.password), args.verbose)
+    scan = nullinux('\"{}\"'.format(args.username), '\"{}\"'.format(args.password), args.verbose, args.output_file)
     for t in args.target:
         try:
             if args.rid_only:
@@ -302,7 +303,7 @@ def main(args):
     if args.users:
         print("\n\033[1;34m[*]\033[1;m {} unique user(s) identified".format(len(scan.acquired_users)))
         if scan.acquired_users:
-            print("\033[1;32m[+]\033[1;m Writing users to file: ./nullinux_users.txt\n")
+            print("\033[1;32m[+]\033[1;m Writing users to file: {}\n".format(args.output_file))
             scan.create_userfile()
 
 if __name__ == '__main__':
@@ -319,6 +320,7 @@ usage:
     nullinux -rid -range 500-600 10.0.0.1
     nullinux -shares -U 'Domain\\User' -P 'Password1' 10.0.0.1""").format(version), formatter_class=argparse.RawTextHelpFormatter, usage=argparse.SUPPRESS)
         args.add_argument('-v', dest="verbose", action='store_true', help="Verbose output")
+        args.add_argument('-o', dest="output_file", type=str, default="./nullinux_users.txt", help="Output users to the specified file")
         auth = args.add_argument_group("Authentication")
         auth.add_argument('-u', '-U', dest='username', type=str, default="", help='Username')
         auth.add_argument('-p', '-P', dest='password', type=str, default="", help='Password')
