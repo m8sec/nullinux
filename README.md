@@ -26,18 +26,21 @@ sudo bash setup.sh
 ### Usage
 ```
 positional arguments:
-  target                Target server
+  target                    Target server
 optional arguments:
-  -h, --help            show this help message and exit
-  -v                    Verbose output
+  -h, --help                show this help message and exit
+  -v                        Verbose output
+  -o OUTPUT_FILE            Output users to the specified file
+  
 Authentication:
-  -u USERNAME, -U USERNAME Username
-  -p PASSWORD, -P PASSWORD Password
+  -u USERNAME, -U USERNAME  Username
+  -p PASSWORD, -P PASSWORD  Password
+  
 Enumeration:
-  -shares               Enumerate shares only
-  -users                Enumerate users only
-  -q, -quick            Fast user enumeration
-  -r, -rid              Perform RID cycling only
-  -range RID_RANGE      Set Custom RID cycling range (Default: '500-550')
-  -T MAX_THREADS        Max threads for RID cycling (Default: 15)
+  -shares                 Enumerate shares only
+  -users                  Enumerate users only
+  -q, -quick              Fast user enumeration
+  -r, -rid                Perform RID cycling only
+  -range RID_RANGE        Set Custom RID cycling range (Default: '500-550')
+  -T MAX_THREADS          Max threads for RID cycling (Default: 15)
   ```
