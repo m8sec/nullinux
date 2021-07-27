@@ -8,8 +8,6 @@ fi
 
 echo -e "\n[*] Starting nullinux setup script"
 
-pip3 install -r requirements.txt
-
 echo -e "[*] Checking for smbclient"
 if [[ $(smbclient -V 2>&1) == *"not found"* ]]
 then

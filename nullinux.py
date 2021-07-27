@@ -1,16 +1,68 @@
 #!/usr/bin/env python3
 from __future__ import print_function
+
 import sys
+import re
 import argparse
 import datetime
 from time import sleep
-from ipparser import ipparser
+from ipaddress import IPv4Network
 from threading import Thread, activeCount
 
 if sys.version_info[0] < 3:
     from commands import getoutput
 else:
     from subprocess import getoutput
+
+class TargetParser():
+    # Condensed version of IPParser using only standard libraries
+    regex = {
+        'single': re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"),
+        'range': re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}-\d{1,3}$"),
+        'cidr': re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2}$"),
+        'dns': re.compile("^.+\.[a-z|A-Z]{2,}$")
+    }
+
+    def __init__(self):
+        self.hosts = []
+
+    def parse(self, target):
+        try:
+            self.controller(target)
+            return self.hosts
+        except Exception as e:
+            print_failure('Target Error: {}\n'.format(str(e)))
+            sys.exit(1)
+
+    def controller(self, target):
+        if target.endswith('.txt'):
+            self.fileParser(target)
+        elif re.match(self.regex['range'], target):
+            self.rangeParser(target)
+        elif re.match(self.regex['dns'], target):
+            self.hosts.append(target)
+        elif ',' in target:
+            self.multiParser(target)
+        else:
+            for ip in IPv4Network(target):
+                self.hosts.append(ip)
+
+    def fileParser(self, filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                self.controller(line.strip())
+
+    def multiParser(self, target):
+        for t in target.strip().split(','):
+            self.controller(t)
+
+    def rangeParser(self, target):
+        a = target.split("-")
+        b = a[0].split(".")
+        for x in range(int(b[3]), int(a[1]) + 1):
+            tmp = b[0] + "." + b[1] + "." + b[2] + "." + str(x)
+            self.hosts.append(tmp)
+
 
 class nullinux():
     known_users     = ['Administrator', 'Guest', 'krbtgt', 'root', 'bin']
@@ -308,7 +360,7 @@ def main(args):
 
 if __name__ == '__main__':
     try:
-        version = '5.4.1'
+        version = '5.5.0dev'
         args = argparse.ArgumentParser(description=("""
                nullinux | v{0}
     -----------------------------------
@@ -333,7 +385,7 @@ usage:
         enum.add_argument('-T', dest='max_threads', type=int, default=15, help='Max threads for RID cycling (Default: 15)')
         args.add_argument(dest='target', nargs='+', help='Target server')
         args = args.parse_args()
-        args.target = ipparser(args.target[0])
+        args.target = TargetParser().parse(args.target[0])
         main(args)
     except KeyboardInterrupt:
         print("\n[!] Key Event Detected...\n\n")
