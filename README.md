@@ -13,12 +13,12 @@ Key Features:
 * Creates a formatted nullinux_users.txt output file free of duplicates for further exploitation
 * Python 2.7 & 3 compatible
 
-For more information, and example output, visit the [wiki page](https://github.com/m8r0wn/nullinux/wiki).
+For more information, and example output, visit the [wiki page](https://github.com/m8sec/nullinux/wiki).
 
 ### Getting Started
 In the Linux terminal run:
 ```
-git clone https://github.com/m8r0wn/nullinux
+git clone https://github.com/m8sec/nullinux
 cd nullinux
 sudo bash setup.sh
 ```
