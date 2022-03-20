@@ -18,7 +18,7 @@ For more information, and example output, visit the [wiki page](https://github.c
 ### Getting Started
 In the Linux terminal run:
 ```
-git clone https://github.com/m8sec/nullinux
+git clone https://github.com/m8r0wn/nullinux
 cd nullinux
 sudo bash setup.sh
 ```
